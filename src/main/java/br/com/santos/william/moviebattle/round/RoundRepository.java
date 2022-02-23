@@ -1,5 +1,6 @@
-package br.com.santos.william.moviebattle.battle;
+package br.com.santos.william.moviebattle.round;
 
+import br.com.santos.william.moviebattle.battle.Battle;
 import br.com.santos.william.moviebattle.round.Round;
 import br.com.santos.william.moviebattle.round.RoundStatus;
 import org.springframework.data.domain.Page;

@@ -1,8 +1,6 @@
 package br.com.santos.william.moviebattle.round;
 
 import br.com.santos.william.moviebattle.battle.Battle;
-import br.com.santos.william.moviebattle.battle.BattleStatusEvent;
-import br.com.santos.william.moviebattle.battle.RoundRepository;
 import br.com.santos.william.moviebattle.battle.exception.BattleException;
 import br.com.santos.william.moviebattle.movie.Movie;
 import br.com.santos.william.moviebattle.movie.MovieService;
@@ -100,8 +98,7 @@ public class RoundService {
         do {
             first = movies.get(random.nextInt(count));
             second = movies.get(random.nextInt(count));
-            key = createKey(first, second);
-        } while (usedKeys.contains(key));
+        } while (first == second || usedKeys.contains(createKey(first, second)));
         return Pair.of(first, second);
     }
 

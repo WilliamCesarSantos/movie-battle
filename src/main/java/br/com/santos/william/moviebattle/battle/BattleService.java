@@ -10,7 +10,7 @@ import br.com.santos.william.moviebattle.user.Session;
 import br.com.santos.william.moviebattle.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-public class BattleService implements ApplicationListener<RoundStatusEvent> {
+public class BattleService {
 
     private final BattleRepository repository;
     private final Session session;
@@ -45,7 +45,7 @@ public class BattleService implements ApplicationListener<RoundStatusEvent> {
         this.limitLostRound = limitLostRound;
     }
 
-    public Battle insert(@Valid Battle battle) {
+    public Battle insert(Battle battle) {
         battle.setCreatedAt(LocalDateTime.now(ZoneOffset.UTC));
         battle.setStatus(BattleStatus.CREATED);
         battle.setPlayer(session.getUser());
@@ -55,21 +55,22 @@ public class BattleService implements ApplicationListener<RoundStatusEvent> {
     }
 
     public Optional<Battle> start(Long id) {
-        return repository.findById(id).map(it -> {
-            if (it.getStatus() == BattleStatus.CREATED) {
-                it.setStatus(BattleStatus.STARTED);
-                createRound(it);
-                var updated = repository.save(it);
-                publisher.publishEvent(new BattleStatusEvent(updated, BattleStatus.CREATED, BattleStatus.STARTED));
-                return updated;
-            } else {
-                throw new BattleException("Quiz já iniciado");
-            }
-        });
+        return repository.findByPlayerAndId(session.getUser(), id)
+                .map(it -> {
+                    if (it.getStatus() == BattleStatus.CREATED) {
+                        it.setStatus(BattleStatus.STARTED);
+                        createRound(it);
+                        var updated = repository.save(it);
+                        publisher.publishEvent(new BattleStatusEvent(updated, BattleStatus.CREATED, BattleStatus.STARTED));
+                        return updated;
+                    } else {
+                        throw new BattleException("Quiz já iniciado");
+                    }
+                });
     }
 
     public Optional<Battle> end(Long id) {
-        return repository.findById(id)
+        return repository.findByPlayerAndId(session.getUser(), id)
                 .map(this::end);
     }
 
@@ -97,9 +98,6 @@ public class BattleService implements ApplicationListener<RoundStatusEvent> {
     }
 
     private Round createRound(Battle battle) {
-        if (battle.getStatus() != BattleStatus.STARTED) {
-            throw new BattleException("Quiz deve estar iniciado para que seja possível criar um round");
-        }
         return roundService.findRoundOpened(battle)
                 .orElseGet(() -> roundService.createRound(battle));
     }
@@ -130,8 +128,8 @@ public class BattleService implements ApplicationListener<RoundStatusEvent> {
                 });
     }
 
-    @Override
-    public void onApplicationEvent(RoundStatusEvent event) {
+    @EventListener
+    public void calculateLostRounds(RoundStatusEvent event) {
         if (event.getNewStatus() == RoundStatus.MISS) {
             var round = (Round) event.getSource();
             var loss = countLostRound(round.getBattle());

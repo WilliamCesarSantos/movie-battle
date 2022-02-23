@@ -16,12 +16,12 @@ public class Round implements Serializable {
 
     @NotNull
     @ManyToOne
-    @Column(name = "movie_one_id")
+    @JoinColumn(name = "movie_one_id")
     private Movie first;
 
     @NotNull
     @ManyToOne
-    @Column(name = "movie_two_id")
+    @JoinColumn(name = "movie_two_id")
     private Movie second;
 
     @OneToOne(fetch = FetchType.LAZY)

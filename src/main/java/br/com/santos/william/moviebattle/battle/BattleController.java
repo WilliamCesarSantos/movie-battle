@@ -7,6 +7,7 @@ import br.com.santos.william.moviebattle.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -44,6 +45,7 @@ public class BattleController {
     }
 
     @PostMapping(consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
+    @ResponseStatus(HttpStatus.CREATED)
     public Battle insert(@RequestBody Battle battle) {
         return service.insert(battle);
     }
@@ -61,6 +63,7 @@ public class BattleController {
     }
 
     @PutMapping(value = "/{id}/round", consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
+    @ResponseStatus(HttpStatus.CREATED)
     public Round round(@PathVariable("id") Long id) {
         return service.createRound(id)
                 .orElseThrow(ResourceNotFoundException::new);

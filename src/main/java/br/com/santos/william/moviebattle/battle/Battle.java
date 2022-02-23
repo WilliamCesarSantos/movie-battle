@@ -25,7 +25,6 @@ public class Battle implements Serializable {
 
     @NotNull
     @ManyToOne
-    @JsonIgnore
     private User player;
 
     @Enumerated(EnumType.STRING)
@@ -63,6 +62,7 @@ public class Battle implements Serializable {
         return player;
     }
 
+    @JsonIgnore
     public void setPlayer(User player) {
         this.player = player;
     }
