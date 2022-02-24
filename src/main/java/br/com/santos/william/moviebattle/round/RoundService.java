@@ -73,7 +73,8 @@ public class RoundService {
                     } else {
                         it.setStatus(RoundStatus.MISS);
                     }
-                    it.setChoose(choose);
+                    movieService.findById(choose.getId())
+                            .ifPresent(it::setChoose);
                     var updated = repository.save(it);
                     publisher.publishEvent(new RoundStatusEvent(updated, RoundStatus.OPEN, updated.getStatus()));
                     return updated;
@@ -90,7 +91,7 @@ public class RoundService {
                 });
     }
 
-    private Pair<Movie, Movie> createNewPair(List<Movie> movies, Set<String> usedKeys) {
+    private Pair<Movie, Movie> createNewPair(List<Movie> movies, Set<Pair<Long, Long>> usedKeys) {
         var count = movies.size();
         var random = new Random();
         String key;
@@ -98,27 +99,29 @@ public class RoundService {
         do {
             first = movies.get(random.nextInt(count));
             second = movies.get(random.nextInt(count));
-        } while (first == second || usedKeys.contains(createKey(first, second)));
+        } while (first.getId().equals(second.getId()) || usedKeys.contains(createKey(first, second)));
         return Pair.of(first, second);
     }
 
-    private Set<String> usedMovies(Battle battle) {
+    private Set<Pair<Long, Long>> usedMovies(Battle battle) {
         return battle.getRounds().stream()
                 .map(it -> {
                     var first = it.getFirst();
                     var second = it.getSecond();
                     return createKey(first, second);
                 })
-                .collect(Collectors.toCollection(TreeSet::new));
+                .collect(Collectors.toCollection(
+                        () -> new TreeSet<>(Comparator.comparing(Pair::getFirst))
+                ));
     }
 
-    private String createKey(Movie first, Movie second) {
+    private Pair<Long, Long> createKey(Movie first, Movie second) {
         var compare = first.getId().compareTo(second.getId());
-        String key;
+        Pair<Long, Long> key;
         if (compare < 0) {
-            key = first.getId().toString().concat("_").concat(second.getId().toString());
+            key = Pair.of(first.getId(), second.getId());
         } else {
-            key = second.getId().toString().concat("_").concat(first.getId().toString());
+            key = Pair.of(second.getId(), first.getId());
         }
         return key;
     }

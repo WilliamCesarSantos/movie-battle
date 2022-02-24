@@ -1,6 +1,6 @@
 package br.com.santos.william.moviebattle.ranking;
 
-import br.com.santos.william.moviebattle.user.User;
+import br.com.santos.william.moviebattle.player.Player;
 
 import javax.persistence.*;
 import javax.validation.constraints.Min;
@@ -15,7 +15,7 @@ public class Ranking implements Serializable {
     private Long id;
 
     @ManyToOne
-    private User user;
+    private Player player;
 
     @NotNull
     @Min(0)
@@ -29,12 +29,12 @@ public class Ranking implements Serializable {
         this.id = id;
     }
 
-    public User getUser() {
-        return user;
+    public Player getPlayer() {
+        return player;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setPlayer(Player player) {
+        this.player = player;
     }
 
     public Float getScore() {

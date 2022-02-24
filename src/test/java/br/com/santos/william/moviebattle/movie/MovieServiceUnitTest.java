@@ -2,9 +2,12 @@ package br.com.santos.william.moviebattle.movie;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Optional;
 
@@ -13,10 +16,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
+@ExtendWith(SpringExtension.class)
 public class MovieServiceUnitTest {
 
-    private final MovieRepository repository = Mockito.mock(MovieRepository.class);
-    private MovieService service = new MovieService(repository);
+    @Mock
+    private MovieRepository repository;
+
+    @InjectMocks
+    private MovieService service;
 
     private Movie movie = new Movie();
 

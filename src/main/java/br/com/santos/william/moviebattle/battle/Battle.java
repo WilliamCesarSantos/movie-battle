@@ -1,7 +1,7 @@
 package br.com.santos.william.moviebattle.battle;
 
 import br.com.santos.william.moviebattle.round.Round;
-import br.com.santos.william.moviebattle.user.User;
+import br.com.santos.william.moviebattle.player.Player;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
@@ -25,7 +25,7 @@ public class Battle implements Serializable {
 
     @NotNull
     @ManyToOne
-    private User player;
+    private Player player;
 
     @Enumerated(EnumType.STRING)
     private BattleStatus status;
@@ -58,12 +58,12 @@ public class Battle implements Serializable {
         this.createdAt = createdAt;
     }
 
-    public User getPlayer() {
+    public Player getPlayer() {
         return player;
     }
 
     @JsonIgnore
-    public void setPlayer(User player) {
+    public void setPlayer(Player player) {
         this.player = player;
     }
 

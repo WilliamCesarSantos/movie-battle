@@ -6,8 +6,8 @@ import br.com.santos.william.moviebattle.round.Round;
 import br.com.santos.william.moviebattle.round.RoundService;
 import br.com.santos.william.moviebattle.round.RoundStatus;
 import br.com.santos.william.moviebattle.round.RoundStatusEvent;
-import br.com.santos.william.moviebattle.user.Session;
-import br.com.santos.william.moviebattle.user.User;
+import br.com.santos.william.moviebattle.player.Session;
+import br.com.santos.william.moviebattle.player.Player;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -30,7 +30,7 @@ public class BattleServiceUnitTest {
     private Battle battle;
     private Long battleId = 10l;
 
-    private final User user = new User();
+    private final Player user = new Player();
     private final Session session = new Session();
     private final Integer limitLostRound = 1;
 
@@ -45,7 +45,7 @@ public class BattleServiceUnitTest {
         user.setId(battleId);
         user.setName("unit-test");
 
-        session.setUser(user);
+        session.setPlayer(user);
 
         battle = new Battle();
         battle.setStatus(BattleStatus.CREATED);
@@ -71,7 +71,7 @@ public class BattleServiceUnitTest {
 
         assertNotNull(battle.getCreatedAt());
         assertEquals(BattleStatus.CREATED, battle.getStatus());
-        assertEquals(session.getUser(), battle.getPlayer());
+        assertEquals(session.getPlayer(), battle.getPlayer());
     }
 
     @Test

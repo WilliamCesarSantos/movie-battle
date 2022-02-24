@@ -1,4 +1,4 @@
-package br.com.santos.william.moviebattle.user;
+package br.com.santos.william.moviebattle.player;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.security.core.GrantedAuthority;
@@ -13,8 +13,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Entity
-@Table(name = "`user`")
-public class User implements Serializable, UserDetails {
+public class Player implements Serializable, UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,14 +31,15 @@ public class User implements Serializable, UserDetails {
     @Size(max = 255)
     private String password;
 
+    @JsonIgnore
     @ElementCollection
     private List<String> roles;
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -55,21 +55,26 @@ public class User implements Serializable, UserDetails {
         return username;
     }
 
+    @JsonIgnore
     @Override
     public boolean isAccountNonExpired() {
-        return false;
+        return true;
     }
 
+
+    @JsonIgnore
     @Override
     public boolean isAccountNonLocked() {
-        return false;
+        return true;
     }
 
+    @JsonIgnore
     @Override
     public boolean isCredentialsNonExpired() {
-        return false;
+        return true;
     }
 
+    @JsonIgnore
     @Override
     public boolean isEnabled() {
         return true;
@@ -79,6 +84,7 @@ public class User implements Serializable, UserDetails {
         this.username = username;
     }
 
+    @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.emptyList();

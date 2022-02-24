@@ -1,9 +1,9 @@
 package br.com.santos.william.moviebattle.battle;
 
 import br.com.santos.william.moviebattle.commons.exception.ResourceNotFoundException;
+import br.com.santos.william.moviebattle.player.Player;
 import br.com.santos.william.moviebattle.round.Answer;
 import br.com.santos.william.moviebattle.round.Round;
-import br.com.santos.william.moviebattle.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,10 +26,13 @@ public class BattleController {
     }
 
     @GetMapping(produces = {APPLICATION_JSON_VALUE})
-    public Page<Battle> list(@RequestParam("player") Long playerId, Pageable pageable) {
+    public Page<Battle> list(
+            @RequestParam(value = "player", required = false) Long playerId,
+            Pageable pageable
+    ) {
         Page<Battle> page;
         if (playerId != null && playerId > 0) {
-            User player = new User();
+            Player player = new Player();
             player.setId(playerId);
             page = service.findByPlayer(player, pageable);
         } else {
@@ -81,7 +84,7 @@ public class BattleController {
     }
 
     @PutMapping(value = "/{id}/round/{round_id}/answer", consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
-    public Round answer(@PathVariable("id") Long id, @PathVariable("round_id") Long roundId, @Valid @RequestBody Answer answer) {
+    public Answer answer(@PathVariable("id") Long id, @PathVariable("round_id") Long roundId, @Valid @RequestBody Answer answer) {
         return service.answer(id, roundId, answer.getChoose())
                 .orElseThrow(ResourceNotFoundException::new);
     }

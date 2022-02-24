@@ -1,6 +1,6 @@
 package br.com.santos.william.moviebattle.battle;
 
-import br.com.santos.william.moviebattle.user.User;
+import br.com.santos.william.moviebattle.player.Player;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,10 +10,10 @@ import java.util.Optional;
 
 public interface BattleRepository extends JpaRepository<Battle, Long> {
 
-    Page<Battle> findByPlayer(User player, Pageable pageable);
+    Page<Battle> findByPlayer(Player player, Pageable pageable);
 
-    Optional<Battle> findByPlayerAndId(User player, Long id);
+    Optional<Battle> findByPlayerAndId(Player player, Long id);
 
-    List<Battle> findByPlayer(User player);
+    List<Battle> findByPlayer(Player player);
 
 }

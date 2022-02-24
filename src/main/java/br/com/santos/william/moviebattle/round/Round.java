@@ -2,6 +2,7 @@ package br.com.santos.william.moviebattle.round;
 
 import br.com.santos.william.moviebattle.battle.Battle;
 import br.com.santos.william.moviebattle.movie.Movie;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -24,6 +25,7 @@ public class Round implements Serializable {
     @JoinColumn(name = "movie_two_id")
     private Movie second;
 
+    @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY)
     private Round nextRound;
 
@@ -36,6 +38,7 @@ public class Round implements Serializable {
     private RoundStatus status;
 
     @ManyToOne
+    @JsonIgnore
     private Movie choose;
 
     public Long getId() {

@@ -2,20 +2,17 @@ package br.com.santos.william.moviebattle.battle;
 
 import br.com.santos.william.moviebattle.battle.exception.BattleException;
 import br.com.santos.william.moviebattle.movie.Movie;
-import br.com.santos.william.moviebattle.round.Round;
-import br.com.santos.william.moviebattle.round.RoundService;
-import br.com.santos.william.moviebattle.round.RoundStatus;
-import br.com.santos.william.moviebattle.round.RoundStatusEvent;
-import br.com.santos.william.moviebattle.user.Session;
-import br.com.santos.william.moviebattle.user.User;
+import br.com.santos.william.moviebattle.player.Player;
+import br.com.santos.william.moviebattle.player.Session;
+import br.com.santos.william.moviebattle.round.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -36,7 +33,7 @@ public class BattleService {
             Session session,
             RoundService roundService,
             ApplicationEventPublisher publisher,
-            Integer limitLostRound
+            @Value("${battle.round.lost.limit}") Integer limitLostRound
     ) {
         this.repository = repository;
         this.session = session;
@@ -48,14 +45,14 @@ public class BattleService {
     public Battle insert(Battle battle) {
         battle.setCreatedAt(LocalDateTime.now(ZoneOffset.UTC));
         battle.setStatus(BattleStatus.CREATED);
-        battle.setPlayer(session.getUser());
+        battle.setPlayer(session.getPlayer());
         var created = repository.save(battle);
         publisher.publishEvent(new BattleStatusEvent(created, null, created.getStatus()));
         return created;
     }
 
     public Optional<Battle> start(Long id) {
-        return repository.findByPlayerAndId(session.getUser(), id)
+        return repository.findByPlayerAndId(session.getPlayer(), id)
                 .map(it -> {
                     if (it.getStatus() == BattleStatus.CREATED) {
                         it.setStatus(BattleStatus.STARTED);
@@ -70,7 +67,7 @@ public class BattleService {
     }
 
     public Optional<Battle> end(Long id) {
-        return repository.findByPlayerAndId(session.getUser(), id)
+        return repository.findByPlayerAndId(session.getPlayer(), id)
                 .map(this::end);
     }
 
@@ -86,45 +83,52 @@ public class BattleService {
     }
 
     public Page<Battle> list(Pageable pageable) {
-        return repository.findByPlayer(session.getUser(), pageable);
+        return repository.findByPlayer(session.getPlayer(), pageable);
     }
 
     public Optional<Battle> findById(Long id) {
-        return repository.findByPlayerAndId(session.getUser(), id);
+        return repository.findByPlayerAndId(session.getPlayer(), id);
     }
 
-    public Page<Battle> findByPlayer(User player, Pageable pageable) {
+    public Page<Battle> findByPlayer(Player player, Pageable pageable) {
         return repository.findByPlayer(player, pageable);
     }
 
     private Round createRound(Battle battle) {
+        if (battle.getStatus() != BattleStatus.STARTED) {
+            throw new BattleException("Quiz não iniciado.");
+        }
         return roundService.findRoundOpened(battle)
                 .orElseGet(() -> roundService.createRound(battle));
     }
 
     public Optional<Round> createRound(Long battleId) {
-        return repository.findByPlayerAndId(session.getUser(), battleId)
+        return repository.findByPlayerAndId(session.getPlayer(), battleId)
                 .map(this::createRound);
     }
 
     public Optional<Round> listRound(Long battleId, Long roundId) {
-        return repository.findByPlayerAndId(session.getUser(), battleId)
+        return repository.findByPlayerAndId(session.getPlayer(), battleId)
                 .flatMap(it -> roundService.findByBattleAndId(it, roundId));
     }
 
     public Page<Round> listRounds(Long battleId, Pageable pageable) {
-        return repository.findByPlayerAndId(session.getUser(), battleId)
+        return repository.findByPlayerAndId(session.getPlayer(), battleId)
                 .map(it -> roundService.findByBattle(it, pageable))
                 .orElse(Page.empty());
     }
 
-    public Optional<Round> answer(Long battleId, Long roundId, Movie choose) {
-        return repository.findByPlayerAndId(session.getUser(), battleId)
+    public Optional<Answer> answer(Long battleId, Long roundId, Movie choose) {
+        return repository.findByPlayerAndId(session.getPlayer(), battleId)
                 .flatMap(it -> {
                     if (it.getStatus() != BattleStatus.STARTED) {
                         throw new BattleException("Quiz deve estar iniciado para que seja possível responder");
                     }
                     return roundService.answerRound(it, roundId, choose);
+                })
+                .map(it -> {
+                    var newRound = createRound(it.getBattle());
+                    return new Answer(it.getChoose(), it.getStatus(), newRound);
                 });
     }
 

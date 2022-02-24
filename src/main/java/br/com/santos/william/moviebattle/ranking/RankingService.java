@@ -3,58 +3,45 @@ package br.com.santos.william.moviebattle.ranking;
 import br.com.santos.william.moviebattle.battle.Battle;
 import br.com.santos.william.moviebattle.battle.BattleStatus;
 import br.com.santos.william.moviebattle.battle.BattleStatusEvent;
-import br.com.santos.william.moviebattle.round.RoundStatus;
-import br.com.santos.william.moviebattle.user.Session;
+import br.com.santos.william.moviebattle.player.Player;
+import br.com.santos.william.moviebattle.ranking.calculate.RankingCalculateStrategy;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 public class RankingService {
 
-    private final Session session;
     private final RankingRepository repository;
+    private final RankingCalculateStrategy strategy;
 
     public RankingService(
-            Session session,
-            RankingRepository repository
+            RankingRepository repository,
+            RankingCalculateStrategy strategy
     ) {
-        this.session = session;
         this.repository = repository;
+        this.strategy = strategy;
     }
 
-    @Async
+    public Optional<Ranking> list(Player player) {
+        return repository.findByPlayer(player);
+    }
+
     @EventListener
     public void calculateScore(BattleStatusEvent event) {
         if (event.getNewStatus() == BattleStatus.FINISHED) {
             var battle = (Battle) event.getSource();
-            var ranking = repository.findByUser(battle.getPlayer())
-                    .orElse(generateRanking());
-            if (ranking.getScore() == null) {
-                ranking.setScore(0f);
-            }
-            var increment = calculateScore(battle);
-            ranking.setScore(ranking.getScore() + increment);
+            var ranking = repository.findByPlayer(battle.getPlayer())
+                    .orElse(buildRanking(battle.getPlayer()));
+            strategy.calculate(battle, ranking);
             repository.save(ranking);
         }
     }
 
-    private float calculateScore(Battle battle) {
-        var score = 0f;
-        var rounds = battle.getRounds();
-        if (!rounds.isEmpty()) {
-            var hits = rounds.stream()
-                    .filter(it -> it.getStatus() == RoundStatus.HIT)
-                    .count();
-            float percentage = hits * 100 / rounds.size();
-            score = rounds.size() * percentage;
-        }
-        return score;
-    }
-
-    private Ranking generateRanking() {
+    private Ranking buildRanking(Player player) {
         var ranking = new Ranking();
-        ranking.setUser(session.getUser());
+        ranking.setPlayer(player);
         ranking.setScore(0f);
         return ranking;
     }

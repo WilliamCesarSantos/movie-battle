@@ -1,4 +1,4 @@
-package br.com.santos.william.moviebattle.user;
+package br.com.santos.william.moviebattle.player;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,13 +21,13 @@ import static org.mockito.Mockito.verify;
 public class UserServiceUnitTest {
 
     @Mock
-    private UserRepository repository;
+    private PlayerRepository repository;
 
     @Mock
     private PasswordEncoder passwordEncoder;
 
     @InjectMocks
-    private UserService service;
+    private PlayerService service;
 
     @Test
     public void listShouldForwardParameter() {
@@ -45,7 +45,7 @@ public class UserServiceUnitTest {
 
     @Test
     public void insertShouldForwardParameter() {
-        var user = new User();
+        var user = new Player();
         user.setPassword("123");
 
         service.insert(user);
@@ -57,7 +57,7 @@ public class UserServiceUnitTest {
     public void insertShouldEncryptPassword() {
         given(passwordEncoder.encode("123")).willReturn("abc");
 
-        var user = new User();
+        var user = new Player();
         user.setPassword("123");
 
         service.insert(user);
@@ -68,7 +68,7 @@ public class UserServiceUnitTest {
 
     @Test
     public void loadUserByUsernameShouldForwardParameter() {
-        given(repository.findByUsername(any())).willReturn(Optional.of(new User()));
+        given(repository.findByUsername(any())).willReturn(Optional.of(new Player()));
 
         service.loadUserByUsername("unit-test");
 

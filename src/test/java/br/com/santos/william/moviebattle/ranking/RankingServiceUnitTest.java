@@ -3,35 +3,44 @@ package br.com.santos.william.moviebattle.ranking;
 import br.com.santos.william.moviebattle.battle.Battle;
 import br.com.santos.william.moviebattle.battle.BattleStatus;
 import br.com.santos.william.moviebattle.battle.BattleStatusEvent;
+import br.com.santos.william.moviebattle.player.Player;
+import br.com.santos.william.moviebattle.ranking.calculate.RankingCalculateStrategy;
 import br.com.santos.william.moviebattle.round.Round;
 import br.com.santos.william.moviebattle.round.RoundStatus;
-import br.com.santos.william.moviebattle.user.Session;
-import br.com.santos.william.moviebattle.user.User;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(SpringExtension.class)
 public class RankingServiceUnitTest {
 
-    private User user = new User();
-    private Session session = new Session();
-    private RankingRepository repository = Mockito.mock(RankingRepository.class);
-    private RankingService service = new RankingService(session, repository);
+    @Mock
+    private RankingRepository repository;
 
-    @BeforeEach
-    public void setUp() {
-        user.setId(1);
-        session.setUser(user);
+    @Mock
+    private RankingCalculateStrategy strategy;
+
+    @InjectMocks
+    private RankingService service;
+
+    @Test
+    public void listShouldForwardParameters() {
+        var player = new Player();
+
+        service.list(player);
+
+        verify(repository).findByPlayer(player);
     }
 
     @Test
@@ -52,7 +61,7 @@ public class RankingServiceUnitTest {
 
     @Test
     public void calculateScoreShouldGenerateRankingWhenUserNoHasIt() {
-        given(repository.findByUser(any())).willReturn(Optional.empty());
+        given(repository.findByPlayer(any())).willReturn(Optional.empty());
 
         var battle = new Battle();
         battle.setRounds(Collections.emptyList());
@@ -66,7 +75,7 @@ public class RankingServiceUnitTest {
     public void calculateScoreShouldUpdateExistsRanking() {
         var ranking = new Ranking();
         ranking.setScore(10f);
-        ranking.setUser(new User());
+        ranking.setPlayer(new Player());
         ranking.setId(1l);
 
         var round = new Round();
@@ -75,7 +84,7 @@ public class RankingServiceUnitTest {
         var battle = new Battle();
         battle.setRounds(List.of(round));
 
-        given(repository.findByUser(any())).willReturn(Optional.of(ranking));
+        given(repository.findByPlayer(any())).willReturn(Optional.of(ranking));
 
         BattleStatusEvent event = new BattleStatusEvent(battle, BattleStatus.STARTED, BattleStatus.FINISHED);
         service.calculateScore(event);
@@ -84,44 +93,29 @@ public class RankingServiceUnitTest {
     }
 
     @Test
-    public void calculateScoreShouldIncrementScore() {
-        var ranking = new Ranking();
-        ranking.setUser(new User());
-        ranking.setId(1l);
-
-        var round = new Round();
-        round.setStatus(RoundStatus.HIT);
-
+    public void calculateScoreShouldCallsStrategyWhenBattleStatusIsFinished() {
         var battle = new Battle();
-        battle.setRounds(List.of(round));
 
-        given(repository.findByUser(any())).willReturn(Optional.of(ranking));
+        given(repository.findByPlayer(any())).willReturn(Optional.empty());
 
         BattleStatusEvent event = new BattleStatusEvent(battle, BattleStatus.STARTED, BattleStatus.FINISHED);
+
         service.calculateScore(event);
 
-        assertEquals(100f, ranking.getScore());
+        verify(strategy).calculate(eq(battle), any());
     }
 
     @Test
-    public void calculateScoreShouldNotIncrementScoreWhenBattleHasOnlyMissRound() {
-        var ranking = new Ranking();
-        ranking.setUser(new User());
-        ranking.setId(1l);
-        ranking.setScore(10f);
-
-        var round = new Round();
-        round.setStatus(RoundStatus.MISS);
-
+    public void calculateScoreShouldNotCallStrategyWhenBattleStatusIsStarted() {
         var battle = new Battle();
-        battle.setRounds(List.of(round));
 
-        given(repository.findByUser(any())).willReturn(Optional.of(ranking));
+        given(repository.findByPlayer(any())).willReturn(Optional.empty());
 
-        BattleStatusEvent event = new BattleStatusEvent(battle, BattleStatus.STARTED, BattleStatus.FINISHED);
+        BattleStatusEvent event = new BattleStatusEvent(battle, BattleStatus.STARTED, BattleStatus.STARTED);
+
         service.calculateScore(event);
 
-        assertEquals(10f, ranking.getScore());
+        verifyNoMoreInteractions(strategy);
     }
 
 }
