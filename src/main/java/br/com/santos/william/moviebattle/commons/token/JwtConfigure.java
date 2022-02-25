@@ -21,6 +21,16 @@ public class JwtConfigure extends SecurityConfigurerAdapter<DefaultSecurityFilte
                 .addFilterBefore(
                         new JwtTokenFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class
+                )
+                .antMatcher("/api/ranking**")
+                .addFilterBefore(
+                        new JwtTokenFilter(jwtTokenProvider),
+                        UsernamePasswordAuthenticationFilter.class
+                )
+                .antMatcher("/api/player**")
+                .addFilterBefore(
+                        new JwtTokenFilter(jwtTokenProvider),
+                        UsernamePasswordAuthenticationFilter.class
                 );
     }
 }

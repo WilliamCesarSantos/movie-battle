@@ -22,8 +22,8 @@ public class MovieWarmUp {
     @EventListener
     public void warmUp(ApplicationReadyEvent event) {
         omdbService.listAll()
-                .peek(it -> log.info("Insert movie: {}. Waiting....", it.getName()))
+                .peek(it -> log.info("Inserting movie: {}.", it.getName()))
                 .forEach(movieService::insert);
-        log.info("Inserted movies");
+        log.info("Inserted movies! Let it go.");
     }
 }

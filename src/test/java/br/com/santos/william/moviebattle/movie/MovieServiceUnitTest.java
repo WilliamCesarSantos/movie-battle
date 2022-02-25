@@ -32,7 +32,7 @@ public class MovieServiceUnitTest {
         movie.setId(1l);
         movie.setGenre("unit-test");
         movie.setName("unit-test");
-        movie.setRank(10f);
+        movie.setRating(10f);
         movie.setVotes(100);
     }
 
@@ -74,8 +74,7 @@ public class MovieServiceUnitTest {
         assertEquals(movie.getId(), inserted.getId());
         assertEquals(movie.getGenre(), inserted.getGenre());
         assertEquals(movie.getName(), inserted.getName());
-        assertEquals(movie.getRank(), inserted.getRank());
+        assertEquals(movie.getRating(), inserted.getRating());
         assertEquals(movie.getVotes(), inserted.getVotes());
-        assertEquals(movie.calculateScore(), inserted.calculateScore());
     }
 }

@@ -8,7 +8,7 @@ import java.io.Serializable;
 public class Answer implements Serializable {
 
     @NotNull
-    private Movie choose;
+    private Movie choice;
 
     private RoundStatus status;
 
@@ -18,17 +18,17 @@ public class Answer implements Serializable {
     }
 
     public Answer(Movie choose, RoundStatus status, Round nextRound) {
-        this.choose = choose;
+        this.choice = choose;
         this.status = status;
         this.nextRound = nextRound;
     }
 
-    public Movie getChoose() {
-        return choose;
+    public Movie getChoice() {
+        return choice;
     }
 
-    public void setChoose(Movie choose) {
-        this.choose = choose;
+    public void setChoice(Movie choice) {
+        this.choice = choice;
     }
 
     public RoundStatus getStatus() {

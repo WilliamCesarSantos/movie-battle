@@ -4,7 +4,8 @@ import br.com.santos.william.moviebattle.commons.exception.ResourceNotFoundExcep
 import br.com.santos.william.moviebattle.player.Player;
 import br.com.santos.william.moviebattle.round.Answer;
 import br.com.santos.william.moviebattle.round.Round;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -20,7 +21,6 @@ public class BattleController {
 
     private final BattleService service;
 
-    @Autowired
     public BattleController(BattleService service) {
         this.service = service;
     }
@@ -50,25 +50,28 @@ public class BattleController {
     @PostMapping(consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
     @ResponseStatus(HttpStatus.CREATED)
     public Battle insert(@RequestBody Battle battle) {
-        return service.insert(battle);
+        return service.create(battle);
     }
 
     @PutMapping(value = "/{id}/start", consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
     public Battle start(@PathVariable("id") Long id, @RequestBody Battle battle) {
-        return service.start(id)
+        return service.findById(id)
+                .map(service::start)
                 .orElseThrow(ResourceNotFoundException::new);
     }
 
     @PutMapping(value = "/{id}/end", consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
     public Battle end(@PathVariable("id") Long id, @RequestBody Battle battle) {
-        return service.end(id)
+        return service.findById(id)
+                .map(service::end)
                 .orElseThrow(ResourceNotFoundException::new);
     }
 
     @PutMapping(value = "/{id}/round", consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
     @ResponseStatus(HttpStatus.CREATED)
     public Round round(@PathVariable("id") Long id) {
-        return service.createRound(id)
+        return service.findById(id)
+                .map(service::createRound)
                 .orElseThrow(ResourceNotFoundException::new);
     }
 
@@ -85,7 +88,8 @@ public class BattleController {
 
     @PutMapping(value = "/{id}/round/{round_id}/answer", consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
     public Answer answer(@PathVariable("id") Long id, @PathVariable("round_id") Long roundId, @Valid @RequestBody Answer answer) {
-        return service.answer(id, roundId, answer.getChoose())
+        return service.listRound(id, roundId)
+                .map(it -> service.answer(it.getBattle(), it, answer.getChoice()))
                 .orElseThrow(ResourceNotFoundException::new);
     }
 

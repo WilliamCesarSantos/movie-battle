@@ -1,21 +1,25 @@
 package br.com.santos.william.moviebattle.battle;
 
+import br.com.santos.william.moviebattle.battle.event.BattleStatusEvent;
 import br.com.santos.william.moviebattle.battle.exception.BattleException;
+import br.com.santos.william.moviebattle.battle.gameover.strategy.GameOverStrategy;
 import br.com.santos.william.moviebattle.movie.Movie;
+import br.com.santos.william.moviebattle.player.Player;
+import br.com.santos.william.moviebattle.player.Session;
 import br.com.santos.william.moviebattle.round.Round;
 import br.com.santos.william.moviebattle.round.RoundService;
-import br.com.santos.william.moviebattle.round.RoundStatus;
-import br.com.santos.william.moviebattle.round.RoundStatusEvent;
-import br.com.santos.william.moviebattle.player.Session;
-import br.com.santos.william.moviebattle.player.Player;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.stubbing.Answer;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -25,32 +29,41 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(SpringExtension.class)
 public class BattleServiceUnitTest {
 
+    private Player player;
     private Battle battle;
     private Long battleId = 10l;
 
-    private final Player user = new Player();
-    private final Session session = new Session();
-    private final Integer limitLostRound = 1;
+    @Spy
+    private Session session;
 
-    private final BattleRepository repository = Mockito.mock(BattleRepository.class);
-    private final RoundService roundService = Mockito.mock(RoundService.class);
-    private final ApplicationEventPublisher publisher = Mockito.mock(ApplicationEventPublisher.class);
+    @Mock
+    private BattleRepository repository;
 
-    private BattleService service = new BattleService(repository, session, roundService, publisher, limitLostRound);
+    @Mock
+    private RoundService roundService;
+
+    @Mock
+    private ApplicationEventPublisher publisher;
+
+    @Mock
+    private GameOverStrategy gameOverStrategy;
+
+    @InjectMocks
+    private BattleService service;
 
     @BeforeEach
     public void setup() {
-        user.setId(battleId);
-        user.setName("unit-test");
-
-        session.setPlayer(user);
+        player = new Player();
+        player.setId(battleId);
+        player.setName("unit-test");
 
         battle = new Battle();
         battle.setStatus(BattleStatus.CREATED);
         battle.setCreatedAt(LocalDateTime.now());
-        battle.setPlayer(user);
+        battle.setPlayer(player);
         battle.setDescription("unit-test");
         battle.setRounds(new ArrayList<>());
 
@@ -59,15 +72,17 @@ public class BattleServiceUnitTest {
             battle.setId(battleId);
             return battle;
         });
+
+        session.setPlayer(player);
     }
 
     @Test
-    public void insertShouldSetStatusAndPlayerBeforeInsert() {
+    public void createShouldSetStatusAndPlayerAndCreatedAt() {
         battle.setCreatedAt(null);
         battle.setStatus(null);
         battle.setPlayer(null);
 
-        service.insert(battle);
+        service.create(battle);
 
         assertNotNull(battle.getCreatedAt());
         assertEquals(BattleStatus.CREATED, battle.getStatus());
@@ -75,24 +90,54 @@ public class BattleServiceUnitTest {
     }
 
     @Test
-    public void insertShouldCallsRepository() {
-        service.insert(battle);
+    public void createShouldCallsRepositoryToSave() {
+        service.create(battle);
 
         verify(repository).save(battle);
         assertEquals(battleId, battle.getId());
     }
 
     @Test
-    public void insertShouldPublishNewEvent() {
-        service.insert(battle);
+    public void createShouldPublishNewEvent() {
+        service.create(battle);
 
         var captor = ArgumentCaptor.forClass(BattleStatusEvent.class);
         verify(publisher).publishEvent(captor.capture());
-        var event = captor.getValue();
 
+        var event = captor.getValue();
         assertNotNull(event);
+    }
+
+    @Test
+    public void createShouldPublishNewEventWithBattleInSouce() {
+        service.create(battle);
+
+        var captor = ArgumentCaptor.forClass(BattleStatusEvent.class);
+        verify(publisher).publishEvent(captor.capture());
+
+        var event = captor.getValue();
         assertEquals(battle, event.getSource());
+    }
+
+    @Test
+    public void createShouldPublishNewEventWithNullOldStatus() {
+        service.create(battle);
+
+        var captor = ArgumentCaptor.forClass(BattleStatusEvent.class);
+        verify(publisher).publishEvent(captor.capture());
+
+        var event = captor.getValue();
         assertNull(event.getOldStatus());
+    }
+
+    @Test
+    public void createShouldPublishNewEventWithCreateInNewStatus() {
+        service.create(battle);
+
+        var captor = ArgumentCaptor.forClass(BattleStatusEvent.class);
+        verify(publisher).publishEvent(captor.capture());
+
+        var event = captor.getValue();
         assertEquals(BattleStatus.CREATED, event.getNewStatus());
     }
 
@@ -101,18 +146,7 @@ public class BattleServiceUnitTest {
         battle.setStatus(BattleStatus.STARTED);
         battle.setId(battleId);
 
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
-
-        assertThrows(BattleException.class, () -> service.start(battleId).get());
-    }
-
-    @Test
-    public void startShouldReturnEmptyOptionalWhenBattleNotFound() {
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.empty());
-
-        var battle = service.start(battleId);
-        assertNotNull(battle);
-        assertTrue(battle.isEmpty());
+        assertThrows(BattleException.class, () -> service.start(battle));
     }
 
     @Test
@@ -120,11 +154,11 @@ public class BattleServiceUnitTest {
         battle.setStatus(BattleStatus.CREATED);
         battle.setId(battleId);
 
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
+        given(repository.findByPlayerAndId(player, battleId)).willReturn(Optional.of(battle));
         given(roundService.findRoundOpened(battle)).willReturn(Optional.empty());
         given(roundService.createRound(battle)).willReturn(new Round());
 
-        service.start(battleId).get();
+        service.start(battle);
 
         verify(roundService).createRound(battle);
     }
@@ -134,10 +168,10 @@ public class BattleServiceUnitTest {
         battle.setStatus(BattleStatus.CREATED);
         battle.setId(battleId);
 
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
+        given(repository.findByPlayerAndId(player, battleId)).willReturn(Optional.of(battle));
         given(roundService.findRoundOpened(battle)).willReturn(Optional.of(new Round()));
 
-        service.start(battleId).get();
+        service.start(battle);
 
         verify(roundService).findRoundOpened(battle);
         verify(roundService, never()).createRound(battle);
@@ -148,9 +182,9 @@ public class BattleServiceUnitTest {
         battle.setStatus(BattleStatus.CREATED);
         battle.setId(battleId);
 
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
+        given(repository.findByPlayerAndId(player, battleId)).willReturn(Optional.of(battle));
 
-        service.start(battleId).get();
+        service.start(battle);
 
         verify(repository).save(battle);
         assertEquals(BattleStatus.STARTED, battle.getStatus());
@@ -161,9 +195,9 @@ public class BattleServiceUnitTest {
         battle.setStatus(BattleStatus.CREATED);
         battle.setId(battleId);
 
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
+        given(repository.findByPlayerAndId(player, battleId)).willReturn(Optional.of(battle));
 
-        service.start(battleId);
+        service.start(battle);
 
         var captor = ArgumentCaptor.forClass(BattleStatusEvent.class);
         verify(publisher).publishEvent(captor.capture());
@@ -180,21 +214,26 @@ public class BattleServiceUnitTest {
         battle.setStatus(BattleStatus.CREATED);
         battle.setId(battleId);
 
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
-
-        assertThrows(BattleException.class, () -> service.end(battleId).get());
+        assertThrows(BattleException.class, () -> service.end(battle));
     }
 
     @Test
     public void endShouldChangeStatusToFinished() {
         battle.setStatus(BattleStatus.STARTED);
 
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
-
-        service.end(battleId).get();
+        service.end(battle);
 
         verify(repository).save(battle);
         assertEquals(BattleStatus.FINISHED, battle.getStatus());
+    }
+
+    @Test
+    public void endShouldSaveBattle() {
+        battle.setStatus(BattleStatus.STARTED);
+
+        service.end(battle);
+
+        verify(repository).save(battle);
     }
 
     @Test
@@ -202,9 +241,9 @@ public class BattleServiceUnitTest {
         battle.setStatus(BattleStatus.STARTED);
         battle.setId(battleId);
 
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
+        given(repository.findByPlayerAndId(player, battleId)).willReturn(Optional.of(battle));
 
-        service.end(battleId).get();
+        service.end(battle);
 
         var captor = ArgumentCaptor.forClass(BattleStatusEvent.class);
         verify(publisher).publishEvent(captor.capture());
@@ -217,42 +256,33 @@ public class BattleServiceUnitTest {
     }
 
     @Test
-    public void endShouldReturnEmptyOptionalWhenBattleNotFound() {
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.empty());
-
-        var result = service.end(battleId);
-
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
     public void listShouldForwardParametersToRepository() {
         service.list(Pageable.unpaged());
 
-        verify(repository).findByPlayer(user, Pageable.unpaged());
+        verify(repository).findByPlayer(player, Pageable.unpaged());
     }
 
     @Test
     public void findByIdShouldForwardParametersToRepository() {
         service.findById(battleId);
 
-        verify(repository).findByPlayerAndId(user, battleId);
+        verify(repository).findByPlayerAndId(player, battleId);
     }
 
     @Test
     public void findByPlayerShouldParametersToRepository() {
-        service.findByPlayer(user, Pageable.unpaged());
+        service.findByPlayer(player, Pageable.unpaged());
 
-        verify(repository).findByPlayer(user, Pageable.unpaged());
+        verify(repository).findByPlayer(player, Pageable.unpaged());
     }
 
     @Test
     public void createRoundShouldFindOpenedRound() {
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
+        battle.setStatus(BattleStatus.STARTED);
+
         given(roundService.findRoundOpened(battle)).willReturn(Optional.of(new Round()));
 
-        service.createRound(battleId).get();
+        service.createRound(battle);
 
         verify(roundService).findRoundOpened(battle);
         verify(roundService, never()).createRound(battle);
@@ -260,29 +290,30 @@ public class BattleServiceUnitTest {
 
     @Test
     public void createRoundShouldCreateNewWhenNotFoundAnyOpened() {
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
+        battle.setStatus(BattleStatus.STARTED);
+
         given(roundService.findRoundOpened(battle)).willReturn(Optional.empty());
         given(roundService.createRound(battle)).willReturn(new Round());
 
-        service.createRound(battleId).get();
+        var round = service.createRound(battle);
 
         verify(roundService).findRoundOpened(battle);
         verify(roundService).createRound(battle);
+        assertNotNull(round);
     }
 
     @Test
-    public void createRoundShouldReturnsEmptyOptionalWhenBattleNotFound() {
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.empty());
+    public void createRoundShouldThrowExceptionWhenBattleStatusIsNotStarted() {
+        battle.setStatus(BattleStatus.CREATED);
 
-        var result = service.createRound(battleId);
+        assertThrows(BattleException.class, () -> service.createRound(battle));
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        verifyNoInteractions(roundService);
     }
 
     @Test
     public void listRoundShouldReturnsEmptyOptionalWhenBattleNotFound() {
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.empty());
+        given(repository.findByPlayerAndId(player, battleId)).willReturn(Optional.empty());
 
         var result = service.listRound(battleId, 1l);
 
@@ -292,7 +323,7 @@ public class BattleServiceUnitTest {
 
     @Test
     public void listRoundShouldReturnsEmptyOptionalWhenRoundNotFound() {
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
+        given(repository.findByPlayerAndId(player, battleId)).willReturn(Optional.of(battle));
         given(roundService.findByBattleAndId(battle, 1l)).willReturn(Optional.empty());
 
         var result = service.listRound(battleId, 1l);
@@ -303,7 +334,7 @@ public class BattleServiceUnitTest {
 
     @Test
     public void listRoundShouldForwardParametersToRoundService() {
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
+        given(repository.findByPlayerAndId(player, battleId)).willReturn(Optional.of(battle));
         given(roundService.findByBattleAndId(battle, 1l)).willReturn(Optional.of(new Round()));
 
         service.listRound(battleId, 1l).get();
@@ -313,7 +344,7 @@ public class BattleServiceUnitTest {
 
     @Test
     public void listRoundsShouldReturnsEmptyPageWhenBattleNotFound() {
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.empty());
+        given(repository.findByPlayerAndId(player, battleId)).willReturn(Optional.empty());
 
         var result = service.listRounds(battleId, Pageable.unpaged());
 
@@ -323,7 +354,7 @@ public class BattleServiceUnitTest {
 
     @Test
     public void listRoundsShouldReturnsEmptyPageWhenAnyRoundNotFound() {
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
+        given(repository.findByPlayerAndId(player, battleId)).willReturn(Optional.of(battle));
         given(roundService.findByBattle(battle, Pageable.unpaged())).willReturn(Page.empty());
 
         var result = service.listRounds(battleId, Pageable.unpaged());
@@ -334,7 +365,7 @@ public class BattleServiceUnitTest {
 
     @Test
     public void listRoundsShouldForwardParametersToRoundService() {
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
+        given(repository.findByPlayerAndId(player, battleId)).willReturn(Optional.of(battle));
         given(roundService.findByBattle(battle, Pageable.unpaged())).willReturn(Page.empty());
 
         service.listRounds(battleId, Pageable.unpaged()).get();
@@ -343,84 +374,55 @@ public class BattleServiceUnitTest {
     }
 
     @Test
-    public void answerShouldReturnsEmptyOptionalWhenBattleNotFound() {
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.empty());
-
-        var result = service.answer(battleId, 1l, new Movie());
-
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
     public void answerShouldThrowExceptionWhenBattleStatusIsNotStarted() {
         battle.setStatus(BattleStatus.CREATED);
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
 
-        assertThrows(BattleException.class, () -> service.answer(battleId, 1l, new Movie()));
+        assertThrows(BattleException.class, () -> service.answer(battle, new Round(), new Movie()));
 
         verifyNoInteractions(roundService);
     }
 
     @Test
-    public void answerShouldForwardParametersToRoundService() {
+    public void answerShouldCreateNewIt() {
         var choose = new Movie();
         battle.setStatus(BattleStatus.STARTED);
-        given(repository.findByPlayerAndId(user, battleId)).willReturn(Optional.of(battle));
 
-        service.answer(battleId, 1l, choose);
+        given(roundService.answer(any(), any())).willReturn(new br.com.santos.william.moviebattle.round.Answer());
+        given(gameOverStrategy.isGameOver(any())).willReturn(false);
 
-        verify(roundService).answerRound(battle, 1l, choose);
+        var answer = service.answer(battle, new Round(), choose);
+
+        verify(roundService).answer(any(), any());
+        assertNotNull(answer);
     }
 
     @Test
-    public void calculateLostRoundsShouldIgnoreMessageWhenStatusIsHit() {
+    public void answerShouldCreateNewRoundWhenIsNotGameOver() {
+        var choose = new Movie();
         battle.setStatus(BattleStatus.STARTED);
-        var event = new RoundStatusEvent(new Round(), null, RoundStatus.HIT);
 
-        service.calculateLostRounds(event);
+        given(roundService.createRound(any())).willReturn(new Round());
+        given(roundService.answer(any(), any())).willReturn(new br.com.santos.william.moviebattle.round.Answer());
+        given(gameOverStrategy.isGameOver(any())).willReturn(false);
 
-        assertEquals(BattleStatus.STARTED, battle.getStatus());
+        var answer = service.answer(battle, new Round(), choose);
+
+        verify(roundService).createRound(battle);
+        assertNotNull(answer.getNextRound());
     }
 
     @Test
-    public void calculateLostRoundsShouldNotCloseBattleWhenMissesIsLessLimit() {
+    public void answerShouldFinishGameWhenGameOver() {
+        var choose = new Movie();
         battle.setStatus(BattleStatus.STARTED);
 
-        var round = new Round();
-        round.setStatus(RoundStatus.MISS);
-        round.setBattle(battle);
+        given(roundService.createRound(any())).willReturn(new Round());
+        given(roundService.answer(any(), any())).willReturn(new br.com.santos.william.moviebattle.round.Answer());
+        given(gameOverStrategy.isGameOver(any())).willReturn(true);
 
-        battle.getRounds().add(round);
-
-        var event = new RoundStatusEvent(round, RoundStatus.OPEN, RoundStatus.MISS);
-
-        service.calculateLostRounds(event);
-
-        assertEquals(BattleStatus.STARTED, battle.getStatus());
-    }
-
-    @Test
-    public void calculateLostRoundsShouldCloseBattleWhenMissesIsGreaterLimit() {
-        battle.setStatus(BattleStatus.STARTED);
-
-        var roundOne = new Round();
-        roundOne.setStatus(RoundStatus.MISS);
-        roundOne.setBattle(battle);
-
-        var roundTwo = new Round();
-        roundTwo.setStatus(RoundStatus.MISS);
-        roundTwo.setBattle(battle);
-
-        battle.getRounds().add(roundOne);
-        battle.getRounds().add(roundTwo);
-
-        var event = new RoundStatusEvent(roundTwo, RoundStatus.OPEN, RoundStatus.MISS);
-
-        service.calculateLostRounds(event);
+        service.answer(battle, new Round(), choose);
 
         assertEquals(BattleStatus.FINISHED, battle.getStatus());
-        verify(repository).save(battle);
     }
 
 }

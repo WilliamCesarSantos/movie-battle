@@ -1,14 +1,17 @@
 package br.com.santos.william.moviebattle.battle;
 
+import br.com.santos.william.moviebattle.battle.event.BattleStatusEvent;
 import br.com.santos.william.moviebattle.battle.exception.BattleException;
+import br.com.santos.william.moviebattle.battle.gameover.strategy.GameOverStrategy;
 import br.com.santos.william.moviebattle.movie.Movie;
 import br.com.santos.william.moviebattle.player.Player;
 import br.com.santos.william.moviebattle.player.Session;
-import br.com.santos.william.moviebattle.round.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import br.com.santos.william.moviebattle.round.Answer;
+import br.com.santos.william.moviebattle.round.Round;
+import br.com.santos.william.moviebattle.round.RoundService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,7 +19,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class BattleService {
@@ -25,61 +27,60 @@ public class BattleService {
     private final Session session;
     private final RoundService roundService;
     private final ApplicationEventPublisher publisher;
-    private final Integer limitLostRound;
+    private final GameOverStrategy gameOverStrategy;
+    private Logger log = LoggerFactory.getLogger(getClass());
 
-    @Autowired
     public BattleService(
             BattleRepository repository,
             Session session,
             RoundService roundService,
             ApplicationEventPublisher publisher,
-            @Value("${battle.round.lost.limit}") Integer limitLostRound
+            GameOverStrategy gameOverStrategy
     ) {
         this.repository = repository;
         this.session = session;
         this.roundService = roundService;
         this.publisher = publisher;
-        this.limitLostRound = limitLostRound;
+        this.gameOverStrategy = gameOverStrategy;
     }
 
-    public Battle insert(Battle battle) {
+    public Battle create(Battle battle) {
+        log.debug("Creating new battle for: {}", session.getPlayer().getName());
         battle.setCreatedAt(LocalDateTime.now(ZoneOffset.UTC));
         battle.setStatus(BattleStatus.CREATED);
         battle.setPlayer(session.getPlayer());
         var created = repository.save(battle);
+        log.debug("Publishing new event for battle: {}", battle);
         publisher.publishEvent(new BattleStatusEvent(created, null, created.getStatus()));
+        log.info("Created new battle: {}", battle.getId());
         return created;
     }
 
-    public Optional<Battle> start(Long id) {
-        return repository.findByPlayerAndId(session.getPlayer(), id)
-                .map(it -> {
-                    if (it.getStatus() == BattleStatus.CREATED) {
-                        it.setStatus(BattleStatus.STARTED);
-                        createRound(it);
-                        var updated = repository.save(it);
-                        publisher.publishEvent(new BattleStatusEvent(updated, BattleStatus.CREATED, BattleStatus.STARTED));
-                        return updated;
-                    } else {
-                        throw new BattleException("Quiz já iniciado");
-                    }
-                });
+    public Battle start(Battle battle) {
+        log.debug("Starting battle : {}", battle.getId());
+        if (battle.getStatus() != BattleStatus.CREATED) {
+            throw new BattleException("Quiz já iniciado");
+        }
+        battle.setStatus(BattleStatus.STARTED);
+        createRound(battle);
+        var updated = repository.save(battle);
+        log.debug("Publishing new battle started event for: {}", battle.getId());
+        publisher.publishEvent(new BattleStatusEvent(updated, BattleStatus.CREATED, BattleStatus.STARTED));
+        log.info("Battle: {} was started!", battle.getId());
+        return updated;
     }
 
-    public Optional<Battle> end(Long id) {
-        return repository.findByPlayerAndId(session.getPlayer(), id)
-                .map(this::end);
-    }
-
-    private Battle end(Battle it) {
-        if (it.getStatus() == BattleStatus.STARTED) {
-            it.setStatus(BattleStatus.FINISHED);
-            var updated = repository.save(it);
-            publisher.publishEvent(new BattleStatusEvent(updated, BattleStatus.STARTED, BattleStatus.FINISHED));
-            return updated;
-        } else {
+    public Battle end(Battle battle) {
+        log.debug("Finishing battle : {}", battle.getId());
+        if (battle.getStatus() != BattleStatus.STARTED) {
             throw new BattleException("Quiz já encerrado");
         }
+        battle.setStatus(BattleStatus.FINISHED);
+        var updated = repository.save(battle);
+        log.debug("Publishing new battle finished event for: {}", battle.getId());
+        publisher.publishEvent(new BattleStatusEvent(updated, BattleStatus.STARTED, BattleStatus.FINISHED));
+        log.info("Battle: {} was finished!", battle.getId());
+        return updated;
     }
 
     public Page<Battle> list(Pageable pageable) {
@@ -94,17 +95,16 @@ public class BattleService {
         return repository.findByPlayer(player, pageable);
     }
 
-    private Round createRound(Battle battle) {
+    public Round createRound(Battle battle) {
+        log.debug("Creating new round for battle : {}", battle.getId());
         if (battle.getStatus() != BattleStatus.STARTED) {
             throw new BattleException("Quiz não iniciado.");
         }
         return roundService.findRoundOpened(battle)
-                .orElseGet(() -> roundService.createRound(battle));
-    }
-
-    public Optional<Round> createRound(Long battleId) {
-        return repository.findByPlayerAndId(session.getPlayer(), battleId)
-                .map(this::createRound);
+                .orElseGet(() -> {
+                    log.debug("None opened round was found. Creating new");
+                    return roundService.createRound(battle);
+                });
     }
 
     public Optional<Round> listRound(Long battleId, Long roundId) {
@@ -118,34 +118,22 @@ public class BattleService {
                 .orElse(Page.empty());
     }
 
-    public Optional<Answer> answer(Long battleId, Long roundId, Movie choose) {
-        return repository.findByPlayerAndId(session.getPlayer(), battleId)
-                .flatMap(it -> {
-                    if (it.getStatus() != BattleStatus.STARTED) {
-                        throw new BattleException("Quiz deve estar iniciado para que seja possível responder");
-                    }
-                    return roundService.answerRound(it, roundId, choose);
-                })
-                .map(it -> {
-                    var newRound = createRound(it.getBattle());
-                    return new Answer(it.getChoose(), it.getStatus(), newRound);
-                });
-    }
-
-    @EventListener
-    public void calculateLostRounds(RoundStatusEvent event) {
-        if (event.getNewStatus() == RoundStatus.MISS) {
-            var round = (Round) event.getSource();
-            var loss = countLostRound(round.getBattle());
-            if (loss > limitLostRound) {
-                end(round.getBattle());
-            }
+    public Answer answer(Battle battle, Round round, Movie chosen) {
+        log.debug("Answering round: {} of battle : {}", round.getId(), battle.getId());
+        if (battle.getStatus() != BattleStatus.STARTED) {
+            throw new BattleException("Quiz deve estar iniciado para que seja possível responder");
         }
+        var answer = roundService.answer(round, chosen);
+        if (gameOverStrategy.isGameOver(battle)) {
+            log.info("Game over!!! Finishing battle");
+            end(battle);
+        } else {
+            log.debug("Continue in game!!! Creating new round");
+            var newRound = createRound(battle);
+            answer.setNextRound(newRound);
+        }
+        log.info("Answered round: {} with chosen: {}", round.getId(), chosen);
+        return answer;
     }
 
-    private Long countLostRound(Battle battle) {
-        return battle.getRounds().stream()
-                .filter(it -> it.getStatus() == RoundStatus.MISS)
-                .collect(Collectors.counting());
-    }
 }

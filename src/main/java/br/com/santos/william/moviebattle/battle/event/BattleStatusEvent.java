@@ -1,5 +1,6 @@
-package br.com.santos.william.moviebattle.battle;
+package br.com.santos.william.moviebattle.battle.event;
 
+import br.com.santos.william.moviebattle.battle.BattleStatus;
 import org.springframework.context.ApplicationEvent;
 
 public class BattleStatusEvent extends ApplicationEvent {

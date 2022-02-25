@@ -25,10 +25,6 @@ public class Round implements Serializable {
     @JoinColumn(name = "movie_two_id")
     private Movie second;
 
-    @JsonIgnore
-    @OneToOne(fetch = FetchType.LAZY)
-    private Round nextRound;
-
     @NotNull
     @ManyToOne
     private Battle battle;
@@ -39,7 +35,7 @@ public class Round implements Serializable {
 
     @ManyToOne
     @JsonIgnore
-    private Movie choose;
+    private Movie choice;
 
     public Long getId() {
         return id;
@@ -65,14 +61,6 @@ public class Round implements Serializable {
         this.second = second;
     }
 
-    public Round getNextRound() {
-        return nextRound;
-    }
-
-    public void setNextRound(Round nextRound) {
-        this.nextRound = nextRound;
-    }
-
     public Battle getBattle() {
         return battle;
     }
@@ -89,11 +77,11 @@ public class Round implements Serializable {
         this.status = status;
     }
 
-    public Movie getChoose() {
-        return choose;
+    public Movie getChoice() {
+        return choice;
     }
 
-    public void setChoose(Movie choose) {
-        this.choose = choose;
+    public void setChoice(Movie choice) {
+        this.choice = choice;
     }
 }

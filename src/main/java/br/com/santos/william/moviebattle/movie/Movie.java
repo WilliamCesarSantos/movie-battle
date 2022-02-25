@@ -26,7 +26,7 @@ public class Movie implements Serializable {
 
     @NotNull
     @JsonIgnore
-    private Float rank;
+    private Float rating;
 
     @NotNull
     @JsonIgnore
@@ -56,12 +56,12 @@ public class Movie implements Serializable {
         this.genre = genre;
     }
 
-    public Float getRank() {
-        return rank;
+    public Float getRating() {
+        return rating;
     }
 
-    public void setRank(Float rank) {
-        this.rank = rank;
+    public void setRating(Float rating) {
+        this.rating = rating;
     }
 
     public Integer getVotes() {
@@ -72,7 +72,4 @@ public class Movie implements Serializable {
         this.votes = votes;
     }
 
-    public Float calculateScore() {
-        return rank * votes;
-    }
 }

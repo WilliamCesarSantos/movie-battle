@@ -4,14 +4,17 @@ import br.com.santos.william.moviebattle.battle.Battle;
 import br.com.santos.william.moviebattle.battle.exception.BattleException;
 import br.com.santos.william.moviebattle.movie.Movie;
 import br.com.santos.william.moviebattle.movie.MovieService;
+import br.com.santos.william.moviebattle.round.answerstrategy.AnswerStrategy;
+import br.com.santos.william.moviebattle.round.event.RoundEvent;
+import br.com.santos.william.moviebattle.round.moviechoicestrategy.MovieChoiceStrategy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 public class RoundService {
@@ -19,15 +22,22 @@ public class RoundService {
     private final RoundRepository repository;
     private final MovieService movieService;
     private final ApplicationEventPublisher publisher;
+    private final MovieChoiceStrategy movieChoiceStrategy;
+    private final AnswerStrategy answerStrategy;
+    private Logger log = LoggerFactory.getLogger(getClass());
 
     public RoundService(
             RoundRepository repository,
             MovieService movieService,
-            ApplicationEventPublisher publisher
+            ApplicationEventPublisher publisher,
+            MovieChoiceStrategy movieChoiceStrategy,
+            AnswerStrategy answerStrategy
     ) {
         this.repository = repository;
         this.movieService = movieService;
         this.publisher = publisher;
+        this.movieChoiceStrategy = movieChoiceStrategy;
+        this.answerStrategy = answerStrategy;
     }
 
     public Optional<Round> findRoundOpened(Battle battle) {
@@ -43,9 +53,10 @@ public class RoundService {
     }
 
     public Round createRound(Battle battle) {
-        var used = usedMovies(battle);
+        log.debug("Creating new round for battle: {}", battle.getId());
         var movies = movieService.list();
-        var pair = createNewPair(movies, used);
+        log.trace("Found: {} movies to new round", movies.size());
+        var pair = movieChoiceStrategy.choice(battle, movies);
 
         var round = new Round();
         round.setBattle(battle);
@@ -53,77 +64,29 @@ public class RoundService {
         round.setSecond(pair.getSecond());
         round.setStatus(RoundStatus.OPEN);
         round = repository.save(round);
-        adjustNextRound(battle, round);
-        battle.getRounds().add(round);
-        publisher.publishEvent(new RoundStatusEvent(round, null, round.getStatus()));
+        log.debug("Publishing new event for round: {}", round.getId());
+        publisher.publishEvent(new RoundEvent(round, null, RoundStatus.OPEN));
+        log.info("Round: {} was created!", round.getId());
         return round;
     }
 
-    public Optional<Round> answerRound(Battle battle, Long roundId, Movie choose) {
-        return repository.findByBattleAndId(battle, roundId)
-                .map(it -> {
-                    if (it.getStatus() != RoundStatus.OPEN) {
-                        throw new BattleException("Round deve estar aberto para que seja respondido");
-                    }
-                    var firstScore = it.getFirst().calculateScore();
-                    var secondScore = it.getSecond().calculateScore();
-                    var movie = firstScore >= secondScore ? it.getFirst() : it.getSecond();
-                    if (movie.getId().equals(choose.getId())) {
-                        it.setStatus(RoundStatus.HIT);
-                    } else {
-                        it.setStatus(RoundStatus.MISS);
-                    }
-                    movieService.findById(choose.getId())
-                            .ifPresent(it::setChoose);
-                    var updated = repository.save(it);
-                    publisher.publishEvent(new RoundStatusEvent(updated, RoundStatus.OPEN, updated.getStatus()));
-                    return updated;
-                });
-    }
-
-    private void adjustNextRound(Battle battle, Round round) {
-        battle.getRounds().stream()
-                .filter(it -> it.getId() != null && !Objects.equals(it.getId(), round.getId()) && it.getNextRound() == null)
-                .findFirst()
-                .ifPresent(it -> {
-                    it.setNextRound(round);
-                    repository.save(it);
-                });
-    }
-
-    private Pair<Movie, Movie> createNewPair(List<Movie> movies, Set<Pair<Long, Long>> usedKeys) {
-        var count = movies.size();
-        var random = new Random();
-        String key;
-        Movie first, second;
-        do {
-            first = movies.get(random.nextInt(count));
-            second = movies.get(random.nextInt(count));
-        } while (first.getId().equals(second.getId()) || usedKeys.contains(createKey(first, second)));
-        return Pair.of(first, second);
-    }
-
-    private Set<Pair<Long, Long>> usedMovies(Battle battle) {
-        return battle.getRounds().stream()
-                .map(it -> {
-                    var first = it.getFirst();
-                    var second = it.getSecond();
-                    return createKey(first, second);
-                })
-                .collect(Collectors.toCollection(
-                        () -> new TreeSet<>(Comparator.comparing(Pair::getFirst))
-                ));
-    }
-
-    private Pair<Long, Long> createKey(Movie first, Movie second) {
-        var compare = first.getId().compareTo(second.getId());
-        Pair<Long, Long> key;
-        if (compare < 0) {
-            key = Pair.of(first.getId(), second.getId());
-        } else {
-            key = Pair.of(second.getId(), first.getId());
+    public Answer answer(Round round, Movie chosen) {
+        if (round.getStatus() != RoundStatus.OPEN) {
+            throw new BattleException("Round deve estar aberto para que seja respondido");
         }
-        return key;
+
+        log.debug("Answering round: {}", round.getId());
+        var status = answerStrategy.answer(round, chosen);
+        round.setStatus(status);
+
+        movieService.findById(chosen.getId())
+                .ifPresent(round::setChoice);
+        var updated = repository.save(round);
+
+        log.debug("Publishing new event for round: {}", round.getId());
+        publisher.publishEvent(new RoundEvent(updated, RoundStatus.OPEN, status));
+        log.info("Round: {} was answered!", round.getId());
+        return new Answer(round.getChoice(), status, null);
     }
 
 }

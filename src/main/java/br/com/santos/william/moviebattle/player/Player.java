@@ -4,13 +4,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 @Entity
 public class Player implements Serializable, UserDetails {
@@ -27,13 +29,13 @@ public class Player implements Serializable, UserDetails {
     @Size(max = 255)
     private String username;
 
+    @JsonIgnore
     @NotNull
     @Size(max = 255)
     private String password;
 
     @JsonIgnore
-    @ElementCollection
-    private List<String> roles;
+    private String roles;
 
     public Long getId() {
         return id;
@@ -90,15 +92,14 @@ public class Player implements Serializable, UserDetails {
         return Collections.emptyList();
     }
 
-    public void setRoles(List<String> roles) {
+    public void setRoles(String roles) {
         this.roles = roles;
     }
 
-    public List<String> getRoles() {
+    public String getRoles() {
         return roles;
     }
 
-    @JsonIgnore
     public String getPassword() {
         return password;
     }

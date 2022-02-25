@@ -1,8 +1,13 @@
 package br.com.santos.william.moviebattle.battle;
 
+import br.com.santos.william.moviebattle.commons.token.JwtTokenProvider;
+import br.com.santos.william.moviebattle.movie.Movie;
+import br.com.santos.william.moviebattle.player.Player;
+import br.com.santos.william.moviebattle.player.PlayerService;
+import br.com.santos.william.moviebattle.round.Answer;
 import br.com.santos.william.moviebattle.round.Round;
 import br.com.santos.william.moviebattle.round.RoundStatus;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -10,6 +15,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -26,10 +33,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Disabled
 public class BattleControllerTest {
 
     private final Long battleId = 10l;
+
+    @Autowired
+    private JwtTokenProvider provider;
+
+    @MockBean
+    private PlayerService playerService;
 
     @Autowired
     private MockMvc mockMvc;
@@ -38,12 +50,24 @@ public class BattleControllerTest {
     private BattleService service;
 
     private String baseUrl = "/api/battle";
+    private String token = "token";
+
+    @BeforeEach
+    public void setup() {
+        var player = new Player();
+        given(playerService.loadUserByUsername("user")).willReturn(player);
+
+        token = provider.createToken("user", "*");
+    }
 
     @Test
     public void listShouldListPageable() throws Exception {
         given(service.findByPlayer(any(), any())).willReturn(Page.empty());
 
-        this.mockMvc.perform(get(baseUrl + "?player=1"))
+        this.mockMvc.perform(
+                        get(baseUrl)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                )
                 .andDo(print())
                 .andExpect(status().isOk());
     }
@@ -56,7 +80,10 @@ public class BattleControllerTest {
 
         given(service.findByPlayer(any(), any())).willReturn(new PageImpl<>(List.of(battle)));
 
-        this.mockMvc.perform(get(baseUrl + "?player=1"))
+        this.mockMvc.perform(
+                        get(baseUrl + "?player=1")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                )
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(battleId))
@@ -71,7 +98,10 @@ public class BattleControllerTest {
 
         given(service.findById(battleId)).willReturn(Optional.of(battle));
 
-        this.mockMvc.perform(get(baseUrl + "/" + battleId))
+        this.mockMvc.perform(
+                        get(baseUrl + "/" + battleId)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                )
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(battleId))
@@ -82,7 +112,10 @@ public class BattleControllerTest {
     public void findByIdReturnsResourceNotFound() throws Exception {
         given(service.findById(battleId)).willReturn(Optional.empty());
 
-        this.mockMvc.perform(get(baseUrl + "/" + battleId))
+        this.mockMvc.perform(
+                        get(baseUrl + "/" + battleId)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                )
                 .andDo(print())
                 .andExpect(status().isNotFound());
     }
@@ -93,10 +126,14 @@ public class BattleControllerTest {
         battle.setId(battleId);
         battle.setDescription("unit-test");
 
-        given(service.insert(any())).willReturn(battle);
+        given(service.create(any())).willReturn(battle);
 
         this.mockMvc.perform(
-                        post(baseUrl).content("{\"description\":\"unit-test\"}")
+                        post(baseUrl)
+                                .content("{\"description\":\"unit-test\"}")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 )
                 .andDo(print())
                 .andExpect(status().isCreated())
@@ -106,11 +143,14 @@ public class BattleControllerTest {
 
     @Test
     public void startShouldThrowExceptionWhenNotFoundBattle() throws Exception {
-        given(service.start(battleId)).willReturn(Optional.empty());
+        given(service.findById(battleId)).willReturn(Optional.empty());
 
         this.mockMvc.perform(
                         put(baseUrl + "/" + battleId + "/start")
                                 .content("{}")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 )
                 .andDo(print())
                 .andExpect(status().isNotFound());
@@ -120,25 +160,30 @@ public class BattleControllerTest {
     public void startShouldUpdateBattle() throws Exception {
         var battle = new Battle();
         battle.setId(battleId);
-        given(service.start(battleId)).willReturn(Optional.of(battle));
+        given(service.findById(battleId)).willReturn(Optional.of(battle));
+        given(service.start(any())).willReturn(battle);
 
         this.mockMvc.perform(
                         put(baseUrl + "/" + battleId + "/start")
                                 .content("{}")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 )
                 .andDo(print())
                 .andExpect(status().isOk());
-
-        verify(service).start(battleId);
     }
 
     @Test
     public void endShouldThrowExceptionWhenNotFoundBattle() throws Exception {
-        given(service.start(battleId)).willReturn(Optional.empty());
+        given(service.findById(battleId)).willReturn(Optional.empty());
 
         this.mockMvc.perform(
                         put(baseUrl + "/" + battleId + "/end")
                                 .content("{}")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 )
                 .andDo(print())
                 .andExpect(status().isNotFound());
@@ -148,51 +193,69 @@ public class BattleControllerTest {
     public void endShouldUpdateBattle() throws Exception {
         var battle = new Battle();
         battle.setId(battleId);
-        given(service.start(battleId)).willReturn(Optional.of(battle));
+        given(service.findById(battleId)).willReturn(Optional.of(battle));
+        given(service.end(any())).willReturn(battle);
 
         this.mockMvc.perform(
                         put(baseUrl + "/" + battleId + "/end")
                                 .content("{}")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 )
                 .andDo(print())
                 .andExpect(status().isOk());
 
-        verify(service).end(battleId);
+        verify(service).end(battle);
     }
 
     @Test
     public void putRoundShouldCreateNew() throws Exception {
-        var round = new Round();
-        round.setId(battleId);
-        round.setStatus(RoundStatus.OPEN);
+        var battle = new Battle();
 
-        given(service.createRound(battleId)).willReturn(Optional.of(round));
+        given(service.findById(battleId)).willReturn(Optional.of(battle));
+        given(service.createRound(any())).willReturn(new Round());
 
-        this.mockMvc.perform(put(baseUrl + "/" + battleId + "/round"))
+        this.mockMvc.perform(
+                        put(baseUrl + "/" + battleId + "/round")
+                                .content("{}")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                )
                 .andDo(print())
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(battleId))
-                .andExpect(jsonPath("$.status").value("OPEN"));
+                .andExpect(status().isCreated());
     }
 
     @Test
     public void putRoundShouldReturnNotFoundWhenBattleIsNotFound() throws Exception {
-        given(service.createRound(battleId)).willReturn(Optional.empty());
+        given(service.findById(battleId)).willReturn(Optional.empty());
 
-        this.mockMvc.perform(put(baseUrl + "/" + battleId + "/round"))
+        this.mockMvc.perform(
+                        put(baseUrl + "/" + battleId + "/round")
+                                .content("{}")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                )
                 .andDo(print())
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    public void putRoundShouldReturnFound() throws Exception {
+    public void getRoundShouldReturnFound() throws Exception {
         var round = new Round();
         round.setId(1l);
-        round.setStatus(RoundStatus.HIT);
+        round.setStatus(RoundStatus.OPEN);
 
         given(service.listRound(battleId, 1l)).willReturn(Optional.of(round));
 
-        this.mockMvc.perform(get(baseUrl + "/" + battleId + "/round/1"))
+        this.mockMvc.perform(
+                        get(baseUrl + "/" + battleId + "/round/1")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                )
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("1"))
@@ -200,42 +263,95 @@ public class BattleControllerTest {
     }
 
     @Test
+    public void getRoundsShouldReturnFound() throws Exception {
+        var round = new Round();
+        round.setId(1l);
+        round.setStatus(RoundStatus.OPEN);
+
+        given(service.listRounds(eq(battleId), any())).willReturn(new PageImpl<>(List.of(round)));
+
+        this.mockMvc.perform(
+                        get(baseUrl + "/" + battleId + "/rounds")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                )
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value("1"))
+                .andExpect(jsonPath("$.content[0].status").value("OPEN"));
+    }
+
+    @Test
     public void getRoundShouldThrowResourceNotFound() throws Exception {
         given(service.listRound(battleId, 1l)).willReturn(Optional.empty());
 
-        this.mockMvc.perform(get(baseUrl + "/" + battleId + "/round/1"))
+        this.mockMvc.perform(
+                        get(baseUrl + "/" + battleId + "/round/1")
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                )
                 .andDo(print())
                 .andExpect(status().isNotFound());
     }
 
     @Test
     public void putAnswerShouldReturnCreate() throws Exception {
-//        var round = new Round();
-//        round.setId(1l);
-//        round.setStatus(RoundStatus.HIT);
-//
-//        given(service.answer(eq(battleId), eq(1l), any())).willReturn(Optional.of(round));
-//
-//        this.mockMvc.perform(
-//                        put(baseUrl + "/" + battleId + "/round/1/answer")
-//                                .content("{\"choose\" : {\"id\": 1}}")
-//                )
-//                .andDo(print())
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$.id").value("1"))
-//                .andExpect(jsonPath("$.status").value("HIT"));
+        var round = new Round();
+        round.setId(1l);
+        round.setStatus(RoundStatus.HIT);
+
+        var answer = new Answer();
+        answer.setNextRound(round);
+        answer.setStatus(RoundStatus.HIT);
+        answer.setChoice(new Movie());
+
+        given(service.listRound(eq(battleId), eq(1l))).willReturn(Optional.of(round));
+        given(service.answer(any(), any(), any())).willReturn(answer);
+
+        this.mockMvc.perform(
+                        put(baseUrl + "/" + battleId + "/round/1/answer")
+                                .content("{\"choice\" : {\"id\": 1}}")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                )
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nextRound").isMap())
+                .andExpect(jsonPath("$.status").value("HIT"))
+                .andExpect(jsonPath("$.choice").isMap());
     }
 
     @Test
     public void putAnswerShouldThrowResourceNotFound() throws Exception {
-        given(service.answer(eq(battleId), eq(1l), any())).willReturn(Optional.empty());
+        given(service.listRound(battleId, 1l)).willReturn(Optional.empty());
 
         this.mockMvc.perform(
                         put(baseUrl + "/" + battleId + "/round/1/answer")
-                                .content("{\"choose\" : {\"id\": 1}}")
+                                .content("{\"choice\" : {\"id\": 1}}")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 )
                 .andDo(print())
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void putAnswerShouldThrowExceptionForInvalidPayload() throws Exception {
+        given(service.listRound(battleId, 1l)).willReturn(Optional.empty());
+
+        this.mockMvc.perform(
+                        put(baseUrl + "/" + battleId + "/round/1/answer")
+                                .content("{}")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.errors[0].choice").value("must not be null"));
     }
 
 }

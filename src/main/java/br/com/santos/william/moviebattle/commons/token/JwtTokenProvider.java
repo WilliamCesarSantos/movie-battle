@@ -3,6 +3,8 @@ package br.com.santos.william.moviebattle.commons.token;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -15,7 +17,6 @@ import org.springframework.stereotype.Component;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Base64;
 import java.util.Date;
-import java.util.List;
 
 @Component
 public class JwtTokenProvider {
@@ -23,6 +24,7 @@ public class JwtTokenProvider {
     private final String secretKey;
     private final Long expires;
     private final UserDetailsService userDetailsService;
+    private Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     public JwtTokenProvider(
@@ -35,13 +37,18 @@ public class JwtTokenProvider {
         this.secretKey = Base64.getEncoder().encodeToString(secretKey.getBytes());
     }
 
-    public String createToken(String username, List<String> roles) {
+    public String createToken(String username, String roles) {
         Claims claims = Jwts.claims().setSubject(username);
-        claims.put("roles", roles);
+        if (roles != null) {
+            var allRoles = roles.split(",");
+            claims.put("roles", allRoles);
+            log.trace("New token for player: {} uses roles: {}", username, roles);
+        }
 
         Date now = new Date();
         Date validity = new Date(now.getTime() + expires);
 
+        log.info("Create new token for player: {}", username);
         return Jwts.builder()
                 .setClaims(claims)
                 .setIssuedAt(now)

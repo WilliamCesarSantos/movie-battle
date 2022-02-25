@@ -4,10 +4,10 @@ import br.com.santos.william.moviebattle.commons.exception.ResourceNotFoundExcep
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-
-import javax.validation.Valid;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -31,12 +31,6 @@ public class PlayerController {
     public Player findById(@PathVariable("id") Long id) {
         return service.findById(id)
                 .orElseThrow(ResourceNotFoundException::new);
-    }
-
-    @PostMapping(consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
-    @ResponseStatus(HttpStatus.CREATED)
-    public Player insert(@Valid @RequestBody Player player) {
-        return service.insert(player);
     }
 
 }

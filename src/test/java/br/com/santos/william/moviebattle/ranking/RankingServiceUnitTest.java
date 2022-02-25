@@ -2,7 +2,7 @@ package br.com.santos.william.moviebattle.ranking;
 
 import br.com.santos.william.moviebattle.battle.Battle;
 import br.com.santos.william.moviebattle.battle.BattleStatus;
-import br.com.santos.william.moviebattle.battle.BattleStatusEvent;
+import br.com.santos.william.moviebattle.battle.event.BattleStatusEvent;
 import br.com.santos.william.moviebattle.player.Player;
 import br.com.santos.william.moviebattle.ranking.calculate.RankingCalculateStrategy;
 import br.com.santos.william.moviebattle.round.Round;
@@ -61,11 +61,17 @@ public class RankingServiceUnitTest {
 
     @Test
     public void calculateScoreShouldGenerateRankingWhenUserNoHasIt() {
-        given(repository.findByPlayer(any())).willReturn(Optional.empty());
+        var player = new Player();
+        player.setName("unit-test");
 
         var battle = new Battle();
+        battle.setPlayer(player);
         battle.setRounds(Collections.emptyList());
+
         BattleStatusEvent event = new BattleStatusEvent(battle, null, BattleStatus.FINISHED);
+
+        given(repository.findByPlayer(any())).willReturn(Optional.empty());
+
         service.calculateScore(event);
 
         verify(repository).save(any());
@@ -73,6 +79,9 @@ public class RankingServiceUnitTest {
 
     @Test
     public void calculateScoreShouldUpdateExistsRanking() {
+        var player = new Player();
+        player.setName("unit-test");
+
         var ranking = new Ranking();
         ranking.setScore(10f);
         ranking.setPlayer(new Player());
@@ -83,6 +92,7 @@ public class RankingServiceUnitTest {
 
         var battle = new Battle();
         battle.setRounds(List.of(round));
+        battle.setPlayer(player);
 
         given(repository.findByPlayer(any())).willReturn(Optional.of(ranking));
 
@@ -94,7 +104,11 @@ public class RankingServiceUnitTest {
 
     @Test
     public void calculateScoreShouldCallsStrategyWhenBattleStatusIsFinished() {
+        var player = new Player();
+        player.setName("unit-test");
+
         var battle = new Battle();
+        battle.setPlayer(player);
 
         given(repository.findByPlayer(any())).willReturn(Optional.empty());
 

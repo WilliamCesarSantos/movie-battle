@@ -6,17 +6,25 @@ import br.com.santos.william.moviebattle.ranking.Ranking;
 import br.com.santos.william.moviebattle.round.Round;
 import br.com.santos.william.moviebattle.round.RoundStatus;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@ExtendWith(SpringExtension.class)
 public class PercentageRankingCalculateStrategyUniTest {
 
-    private final PercentageRankingCalculateStrategy strategy = new PercentageRankingCalculateStrategy();
+    @InjectMocks
+    private PercentageRankingCalculateStrategy strategy;
 
     @Test
     public void calculateScoreMustBeEquals198() {
+        var player = new Player();
+        player.setName("uni-test");
+
         var ranking = new Ranking();
         ranking.setPlayer(new Player());
         ranking.setId(1l);
@@ -31,6 +39,7 @@ public class PercentageRankingCalculateStrategyUniTest {
         roundThree.setStatus(RoundStatus.MISS);
 
         var battle = new Battle();
+        battle.setPlayer(player);
         battle.setRounds(List.of(
                 roundOne,
                 roundTwo,
@@ -44,6 +53,9 @@ public class PercentageRankingCalculateStrategyUniTest {
 
     @Test
     public void calculateShouldNotUpdateScoreWhenBattleHasNoRound() {
+        var player = new Player();
+        player.setName("uni-test");
+
         var ranking = new Ranking();
         ranking.setPlayer(new Player());
         ranking.setId(1l);
@@ -51,6 +63,7 @@ public class PercentageRankingCalculateStrategyUniTest {
 
         var battle = new Battle();
         battle.setRounds(List.of());
+        battle.setPlayer(player);
 
         strategy.calculate(battle, ranking);
 
