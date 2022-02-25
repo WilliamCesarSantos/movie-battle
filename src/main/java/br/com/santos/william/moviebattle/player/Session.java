@@ -1,10 +1,10 @@
 package br.com.santos.william.moviebattle.player;
 
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.annotation.SessionScope;
+import org.springframework.web.context.annotation.RequestScope;
 
 @Component
-@SessionScope
+@RequestScope
 public class Session {
 
     private Player player;

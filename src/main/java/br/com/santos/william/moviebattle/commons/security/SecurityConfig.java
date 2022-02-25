@@ -2,7 +2,6 @@ package br.com.santos.william.moviebattle.commons.security;
 
 import br.com.santos.william.moviebattle.commons.token.JwtConfigure;
 import br.com.santos.william.moviebattle.commons.token.JwtTokenProvider;
-import feign.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,21 +28,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return super.authenticationManagerBean();
     }
 
-    @Bean
-    Logger.Level feignLoggerLevel() {
-        return Logger.Level.FULL;
-    }
-
     public void configure(HttpSecurity security) throws Exception {
         security.httpBasic().disable()
                 .csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .and()
                 .authorizeRequests()
+                .antMatchers("/api/battle**", "/api/ranking**", "/api/player**").authenticated()
                 .antMatchers("/api/login").permitAll()
                 .antMatchers("/h2-console").permitAll()
                 .antMatchers("/actuator**").permitAll()
-                .anyRequest().authenticated()
                 .and()
                 .apply(new JwtConfigure(jwtTokenProvider));
     }

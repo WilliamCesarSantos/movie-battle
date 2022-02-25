@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,6 +42,7 @@ public class BattleController {
     })
     @GetMapping(produces = {APPLICATION_JSON_VALUE})
     public Page<Battle> list(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = true) String authorization,
             @RequestParam(value = "player", required = false) Long playerId,
             Pageable pageable
     ) {
@@ -76,7 +78,10 @@ public class BattleController {
             )
     })
     @GetMapping(value = "/{id}", produces = {APPLICATION_JSON_VALUE})
-    public Battle findById(@PathVariable("id") Long id) {
+    public Battle findById(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = true) String authorization,
+            @PathVariable("id") Long id
+    ) {
         return service.findById(id)
                 .orElseThrow(ResourceNotFoundException::new);
     }
@@ -103,7 +108,10 @@ public class BattleController {
     })
     @PostMapping(consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
     @ResponseStatus(HttpStatus.CREATED)
-    public Battle insert(@RequestBody Battle battle) {
+    public Battle insert(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = true) String authorization,
+            @RequestBody Battle battle
+    ) {
         return service.create(battle);
     }
 
@@ -128,7 +136,11 @@ public class BattleController {
             )
     })
     @PutMapping(value = "/{id}/start", consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
-    public Battle start(@PathVariable("id") Long id, @RequestBody Battle battle) {
+    public Battle start(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = true) String authorization,
+            @PathVariable("id") Long id,
+            @RequestBody Battle battle
+    ) {
         return service.findById(id)
                 .map(service::start)
                 .orElseThrow(ResourceNotFoundException::new);
@@ -155,7 +167,11 @@ public class BattleController {
             )
     })
     @PutMapping(value = "/{id}/end", consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
-    public Battle end(@PathVariable("id") Long id, @RequestBody Battle battle) {
+    public Battle end(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = true) String authorization,
+            @PathVariable("id") Long id,
+            @RequestBody Battle battle
+    ) {
         return service.findById(id)
                 .map(service::end)
                 .orElseThrow(ResourceNotFoundException::new);
@@ -183,7 +199,10 @@ public class BattleController {
     })
     @PutMapping(value = "/{id}/round", consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
     @ResponseStatus(HttpStatus.CREATED)
-    public Round round(@PathVariable("id") Long id) {
+    public Round round(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = true) String authorization,
+            @PathVariable("id") Long id
+    ) {
         return service.findById(id)
                 .map(service::createRound)
                 .orElseThrow(ResourceNotFoundException::new);
@@ -210,7 +229,11 @@ public class BattleController {
             )
     })
     @GetMapping(value = "/{id}/rounds", produces = {APPLICATION_JSON_VALUE})
-    public Page<Round> round(@PathVariable Long id, Pageable pageable) {
+    public Page<Round> round(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = true) String authorization,
+            @PathVariable Long id,
+            Pageable pageable
+    ) {
         return service.listRounds(id, pageable);
     }
 
@@ -235,7 +258,11 @@ public class BattleController {
             )
     })
     @GetMapping(value = "/{id}/round/{round_id}", produces = {APPLICATION_JSON_VALUE})
-    public Round round(@PathVariable Long id, @PathVariable("round_id") Long roundId) {
+    public Round round(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = true) String authorization,
+            @PathVariable Long id,
+            @PathVariable("round_id") Long roundId
+    ) {
         return service.listRound(id, roundId)
                 .orElseThrow(ResourceNotFoundException::new);
     }
@@ -270,7 +297,12 @@ public class BattleController {
             )
     })
     @PutMapping(value = "/{id}/round/{round_id}/answer", consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
-    public Answer answer(@PathVariable("id") Long id, @PathVariable("round_id") Long roundId, @Valid @RequestBody Answer answer) {
+    public Answer answer(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = true) String authorization,
+            @PathVariable("id") Long id,
+            @PathVariable("round_id") Long roundId,
+            @Valid @RequestBody Answer answer
+    ) {
         return service.listRound(id, roundId)
                 .map(it -> service.answer(it.getBattle(), it, answer.getChoice()))
                 .orElseThrow(ResourceNotFoundException::new);

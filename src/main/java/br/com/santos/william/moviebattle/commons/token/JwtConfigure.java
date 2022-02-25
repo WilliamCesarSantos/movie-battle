@@ -17,17 +17,9 @@ public class JwtConfigure extends SecurityConfigurerAdapter<DefaultSecurityFilte
 
     @Override
     public void configure(HttpSecurity builder) throws Exception {
-        builder.antMatcher("/api/battle**")
-                .addFilterBefore(
-                        new JwtTokenFilter(jwtTokenProvider),
-                        UsernamePasswordAuthenticationFilter.class
-                )
-                .antMatcher("/api/ranking**")
-                .addFilterBefore(
-                        new JwtTokenFilter(jwtTokenProvider),
-                        UsernamePasswordAuthenticationFilter.class
-                )
-                .antMatcher("/api/player**")
+        builder.requestMatchers()
+                .antMatchers("/api/battle**", "/api/ranking**", "/api/player**")
+                .and()
                 .addFilterBefore(
                         new JwtTokenFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class

@@ -1,6 +1,7 @@
 package br.com.santos.william.moviebattle.commons.exception;
 
 import br.com.santos.william.moviebattle.battle.exception.BattleException;
+import io.jsonwebtoken.ExpiredJwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -23,7 +24,7 @@ public class GenericExceptionHandler {
     private Logger log = LoggerFactory.getLogger(getClass());
 
     @ExceptionHandler(value = {AuthenticationException.class})
-    protected ResponseEntity<Object> handleAuthenticationException(
+    public ResponseEntity<Object> handleAuthenticationException(
             AuthenticationException ex,
             WebRequest request
     ) {
@@ -32,7 +33,7 @@ public class GenericExceptionHandler {
     }
 
     @ExceptionHandler(value = {MethodArgumentNotValidException.class})
-    protected ResponseEntity<Object> handleMethodArgumentNotValidException(
+    public ResponseEntity<Object> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException ex,
             WebRequest request
     ) {
@@ -55,7 +56,7 @@ public class GenericExceptionHandler {
     }
 
     @ExceptionHandler(value = {BattleException.class})
-    protected ResponseEntity<Object> handleBattleException(
+    public ResponseEntity<Object> handleBattleException(
             BattleException ex,
             WebRequest request
     ) {
@@ -67,6 +68,15 @@ public class GenericExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body);
+    }
+
+    @ExceptionHandler(value = {ExpiredJwtException.class})
+    public ResponseEntity<Object> handleExpiredJwtException(
+            ExpiredJwtException ex,
+            WebRequest request
+    ) {
+        log.warn("Unhandled exception:", ex);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Token expired");
     }
 
 }

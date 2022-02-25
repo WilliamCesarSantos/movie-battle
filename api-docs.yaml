@@ -13,6 +13,11 @@ paths:
       summary: Start battle
       operationId: start
       parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
       - name: id
         in: path
         required: true
@@ -32,13 +37,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Battle'
-        "401":
-          description: User not logged
-          content:
-            application/json:
-              example:
-                code: UNAUTHORIZED
-                message: User invalid
         "404":
           description: Battle not found
           content:
@@ -46,6 +44,13 @@ paths:
               example:
                 code: NOT_FOUND
                 message: Object not found
+        "401":
+          description: User not logged
+          content:
+            application/json:
+              example:
+                code: UNAUTHORIZED
+                message: User invalid
   /api/battle/{id}/round:
     put:
       tags:
@@ -55,6 +60,11 @@ paths:
         started
       operationId: round
       parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
       - name: id
         in: path
         required: true
@@ -68,13 +78,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Round'
-        "401":
-          description: User not logged
-          content:
-            application/json:
-              example:
-                code: UNAUTHORIZED
-                message: User invalid
         "404":
           description: Battle not found
           content:
@@ -82,6 +85,13 @@ paths:
               example:
                 code: NOT_FOUND
                 message: Object not found
+        "401":
+          description: User not logged
+          content:
+            application/json:
+              example:
+                code: UNAUTHORIZED
+                message: User invalid
   /api/battle/{id}/round/{round_id}/answer:
     put:
       tags:
@@ -90,6 +100,11 @@ paths:
       description: The battle has been started and not finished
       operationId: answer
       parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
       - name: id
         in: path
         required: true
@@ -109,19 +124,6 @@ paths:
               $ref: '#/components/schemas/Answer'
         required: true
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Answer'
-        "401":
-          description: User not logged
-          content:
-            application/json:
-              example:
-                code: UNAUTHORIZED
-                message: User invalid
         "404":
           description: Battle or round not found
           content:
@@ -129,6 +131,12 @@ paths:
               example:
                 code: NOT_FOUND
                 message: Object not found
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Answer'
         "400":
           description: Invalid request
           content:
@@ -137,6 +145,13 @@ paths:
                 code: BAD_REQUEST
                 errors:
                 - choice: must not be null
+        "401":
+          description: User not logged
+          content:
+            application/json:
+              example:
+                code: UNAUTHORIZED
+                message: User invalid
   /api/battle/{id}/end:
     put:
       tags:
@@ -145,6 +160,11 @@ paths:
       description: The battle has been started
       operationId: end
       parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
       - name: id
         in: path
         required: true
@@ -164,13 +184,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Battle'
-        "401":
-          description: User not logged
-          content:
-            application/json:
-              example:
-                code: UNAUTHORIZED
-                message: User invalid
         "404":
           description: Battle not found
           content:
@@ -178,6 +191,13 @@ paths:
               example:
                 code: NOT_FOUND
                 message: Object not found
+        "401":
+          description: User not logged
+          content:
+            application/json:
+              example:
+                code: UNAUTHORIZED
+                message: User invalid
   /api/login:
     post:
       tags:
@@ -191,13 +211,6 @@ paths:
               $ref: '#/components/schemas/LoginDto'
         required: true
       responses:
-        "401":
-          description: User not logged
-          content:
-            application/json:
-              example:
-                code: UNAUTHORIZED
-                message: User invalid
         "200":
           description: OK
           headers:
@@ -208,6 +221,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LoginDtoOutput'
+        "401":
+          description: User not logged
+          content:
+            application/json:
+              example:
+                code: UNAUTHORIZED
+                message: User invalid
   /api/battle:
     get:
       tags:
@@ -215,6 +235,11 @@ paths:
       summary: List battles
       operationId: list_2
       parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
       - name: player
         in: query
         required: false
@@ -245,6 +270,12 @@ paths:
       - battle-controller
       summary: Create new battle
       operationId: insert
+      parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
@@ -258,13 +289,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Battle'
-        "401":
-          description: User not logged
-          content:
-            application/json:
-              example:
-                code: UNAUTHORIZED
-                message: User invalid
         "400":
           description: Invalid request
           content:
@@ -273,12 +297,25 @@ paths:
                 code: BAD_REQUEST
                 errors:
                 - description: must not be null
+        "401":
+          description: User not logged
+          content:
+            application/json:
+              example:
+                code: UNAUTHORIZED
+                message: User invalid
   /api/ranking:
     get:
       tags:
       - ranking-controller
       summary: List ranking by logged user
       operationId: list
+      parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -313,6 +350,12 @@ paths:
         schema:
           $ref: '#/components/schemas/Pageable'
       responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagePlayer'
         "401":
           description: User not logged
           content:
@@ -320,12 +363,6 @@ paths:
               example:
                 code: UNAUTHORIZED
                 message: User invalid
-        "200":
-          description: Ok
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PagePlayer'
   /api/player/{id}:
     get:
       tags:
@@ -333,6 +370,11 @@ paths:
       summary: List player by id
       operationId: findById
       parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
       - name: id
         in: path
         required: true
@@ -367,6 +409,11 @@ paths:
       summary: Find battle by id
       operationId: findById_1
       parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
       - name: id
         in: path
         required: true
@@ -380,13 +427,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Battle'
-        "401":
-          description: User not logged
-          content:
-            application/json:
-              example:
-                code: UNAUTHORIZED
-                message: User invalid
         "404":
           description: Battle not found
           content:
@@ -394,6 +434,13 @@ paths:
               example:
                 code: NOT_FOUND
                 message: Object not found
+        "401":
+          description: User not logged
+          content:
+            application/json:
+              example:
+                code: UNAUTHORIZED
+                message: User invalid
   /api/battle/{id}/rounds:
     get:
       tags:
@@ -401,6 +448,11 @@ paths:
       summary: List all rounds
       operationId: round_1
       parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
       - name: id
         in: path
         required: true
@@ -419,13 +471,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PageRound'
-        "401":
-          description: User not logged
-          content:
-            application/json:
-              example:
-                code: UNAUTHORIZED
-                message: User invalid
         "404":
           description: Battle not found
           content:
@@ -433,6 +478,13 @@ paths:
               example:
                 code: NOT_FOUND
                 message: Object not found
+        "401":
+          description: User not logged
+          content:
+            application/json:
+              example:
+                code: UNAUTHORIZED
+                message: User invalid
   /api/battle/{id}/round/{round_id}:
     get:
       tags:
@@ -440,6 +492,11 @@ paths:
       summary: Find round by id
       operationId: round_2
       parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
       - name: id
         in: path
         required: true
@@ -453,6 +510,13 @@ paths:
           type: integer
           format: int64
       responses:
+        "404":
+          description: Battle or round not found
+          content:
+            application/json:
+              example:
+                code: NOT_FOUND
+                message: Object not found
         "201":
           description: Created
           content:
@@ -466,13 +530,6 @@ paths:
               example:
                 code: UNAUTHORIZED
                 message: User invalid
-        "404":
-          description: Battle or round not found
-          content:
-            application/json:
-              example:
-                code: NOT_FOUND
-                message: Object not found
 components:
   schemas:
     Battle:
@@ -634,13 +691,13 @@ components:
           $ref: '#/components/schemas/Sort'
         pageable:
           $ref: '#/components/schemas/PageableObject'
-        numberOfElements:
-          type: integer
-          format: int32
         first:
           type: boolean
         last:
           type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
         empty:
           type: boolean
     PageableObject:
@@ -693,13 +750,13 @@ components:
           $ref: '#/components/schemas/Sort'
         pageable:
           $ref: '#/components/schemas/PageableObject'
-        numberOfElements:
-          type: integer
-          format: int32
         first:
           type: boolean
         last:
           type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
         empty:
           type: boolean
     PageRound:
@@ -725,12 +782,12 @@ components:
           $ref: '#/components/schemas/Sort'
         pageable:
           $ref: '#/components/schemas/PageableObject'
-        numberOfElements:
-          type: integer
-          format: int32
         first:
           type: boolean
         last:
           type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
         empty:
           type: boolean
