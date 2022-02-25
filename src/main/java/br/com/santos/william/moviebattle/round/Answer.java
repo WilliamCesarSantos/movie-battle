@@ -1,17 +1,20 @@
 package br.com.santos.william.moviebattle.round;
 
 import br.com.santos.william.moviebattle.movie.Movie;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.springframework.hateoas.RepresentationModel;
 
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
-public class Answer implements Serializable {
+public class Answer extends RepresentationModel<Answer> implements Serializable {
 
     @NotNull
     private Movie choice;
 
     private RoundStatus status;
 
+    @JsonIgnore
     private Round nextRound;
 
     public Answer() {

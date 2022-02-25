@@ -1,6 +1,8 @@
 package br.com.santos.william.moviebattle.ranking;
 
+import br.com.santos.william.moviebattle.battle.Battle;
 import br.com.santos.william.moviebattle.player.Player;
+import org.springframework.hateoas.RepresentationModel;
 
 import javax.persistence.*;
 import javax.validation.constraints.Min;
@@ -8,7 +10,7 @@ import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 @Entity
-public class Ranking implements Serializable {
+public class Ranking extends RepresentationModel<Ranking> implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -3,6 +3,7 @@ package br.com.santos.william.moviebattle.battle;
 import br.com.santos.william.moviebattle.round.Round;
 import br.com.santos.william.moviebattle.player.Player;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.springframework.hateoas.RepresentationModel;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-public class Battle implements Serializable {
+public class Battle extends RepresentationModel<Battle> implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

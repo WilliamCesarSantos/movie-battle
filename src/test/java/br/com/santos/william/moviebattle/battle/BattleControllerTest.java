@@ -62,7 +62,7 @@ public class BattleControllerTest {
 
     @Test
     public void listShouldListPageable() throws Exception {
-        given(service.findByPlayer(any(), any())).willReturn(Page.empty());
+        given(service.list(any())).willReturn(Page.empty());
 
         this.mockMvc.perform(
                         get(baseUrl)
@@ -212,9 +212,14 @@ public class BattleControllerTest {
     @Test
     public void putRoundShouldCreateNew() throws Exception {
         var battle = new Battle();
+        battle.setId(battleId);
+
+        var round = new Round();
+        round.setId(1l);
+        round.setBattle(battle);
 
         given(service.findById(battleId)).willReturn(Optional.of(battle));
-        given(service.createRound(any())).willReturn(new Round());
+        given(service.createRound(any())).willReturn(round);
 
         this.mockMvc.perform(
                         put(baseUrl + "/" + battleId + "/round")
@@ -244,9 +249,13 @@ public class BattleControllerTest {
 
     @Test
     public void getRoundShouldReturnFound() throws Exception {
+        var battle = new Battle();
+        battle.setId(battleId);
+
         var round = new Round();
         round.setId(1l);
         round.setStatus(RoundStatus.OPEN);
+        round.setBattle(battle);
 
         given(service.listRound(battleId, 1l)).willReturn(Optional.of(round));
 
@@ -264,14 +273,18 @@ public class BattleControllerTest {
 
     @Test
     public void getRoundsShouldReturnFound() throws Exception {
+        var battle = new Battle();
+        battle.setId(battleId);
+
         var round = new Round();
         round.setId(1l);
         round.setStatus(RoundStatus.OPEN);
+        round.setBattle(battle);
 
         given(service.listRounds(eq(battleId), any())).willReturn(new PageImpl<>(List.of(round)));
 
         this.mockMvc.perform(
-                        get(baseUrl + "/" + battleId + "/rounds")
+                        get(baseUrl + "/" + battleId + "/round")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .accept(MediaType.APPLICATION_JSON)
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
@@ -296,9 +309,13 @@ public class BattleControllerTest {
 
     @Test
     public void putAnswerShouldReturnCreate() throws Exception {
+        var battle = new Battle();
+        battle.setId(10L);
+
         var round = new Round();
         round.setId(1l);
         round.setStatus(RoundStatus.HIT);
+        round.setBattle(battle);
 
         var answer = new Answer();
         answer.setNextRound(round);
@@ -317,7 +334,7 @@ public class BattleControllerTest {
                 )
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nextRound").isMap())
+                .andExpect(jsonPath("$._links.nextRound").isMap())
                 .andExpect(jsonPath("$.status").value("HIT"))
                 .andExpect(jsonPath("$.choice").isMap());
     }

@@ -3,13 +3,14 @@ package br.com.santos.william.moviebattle.round;
 import br.com.santos.william.moviebattle.battle.Battle;
 import br.com.santos.william.moviebattle.movie.Movie;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.springframework.hateoas.RepresentationModel;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 @Entity
-public class Round implements Serializable {
+public class Round extends RepresentationModel<Round> implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,6 +28,7 @@ public class Round implements Serializable {
 
     @NotNull
     @ManyToOne
+    @JsonIgnore
     private Battle battle;
 
     @NotNull

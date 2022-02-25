@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -54,7 +57,7 @@ public class BattleController {
         } else {
             page = service.list(pageable);
         }
-        return page;
+        return page.map(this::configureHateoas);
     }
 
     @Operation(summary = "Find battle by id")
@@ -83,6 +86,7 @@ public class BattleController {
             @PathVariable("id") Long id
     ) {
         return service.findById(id)
+                .map(this::configureHateoas)
                 .orElseThrow(ResourceNotFoundException::new);
     }
 
@@ -108,11 +112,12 @@ public class BattleController {
     })
     @PostMapping(consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
     @ResponseStatus(HttpStatus.CREATED)
-    public Battle insert(
+    public Battle create(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = true) String authorization,
             @RequestBody Battle battle
     ) {
-        return service.create(battle);
+        var created = service.create(battle);
+        return this.configureHateoas(created);
     }
 
     @Operation(summary = "Start battle")
@@ -143,6 +148,7 @@ public class BattleController {
     ) {
         return service.findById(id)
                 .map(service::start)
+                .map(this::configureHateoas)
                 .orElseThrow(ResourceNotFoundException::new);
     }
 
@@ -174,6 +180,7 @@ public class BattleController {
     ) {
         return service.findById(id)
                 .map(service::end)
+                .map(this::configureHateoas)
                 .orElseThrow(ResourceNotFoundException::new);
     }
 
@@ -197,14 +204,15 @@ public class BattleController {
                     }
             )
     })
-    @PutMapping(value = "/{id}/round", consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
+    @PutMapping(value = "/{battle_id}/round", consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
     @ResponseStatus(HttpStatus.CREATED)
-    public Round round(
+    public Round createRound(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = true) String authorization,
-            @PathVariable("id") Long id
+            @PathVariable("battle_id") Long battleId
     ) {
-        return service.findById(id)
+        return service.findById(battleId)
                 .map(service::createRound)
+                .map(this::configureHateoas)
                 .orElseThrow(ResourceNotFoundException::new);
     }
 
@@ -228,13 +236,14 @@ public class BattleController {
                     }
             )
     })
-    @GetMapping(value = "/{id}/rounds", produces = {APPLICATION_JSON_VALUE})
-    public Page<Round> round(
+    @GetMapping(value = "/{battle_id}/round", produces = {APPLICATION_JSON_VALUE})
+    public Page<Round> listRounds(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = true) String authorization,
-            @PathVariable Long id,
+            @PathVariable("battle_id") Long battleId,
             Pageable pageable
     ) {
-        return service.listRounds(id, pageable);
+        return service.listRounds(battleId, pageable)
+                .map(this::configureHateoas);
     }
 
     @Operation(summary = "Find round by id")
@@ -257,13 +266,14 @@ public class BattleController {
                     }
             )
     })
-    @GetMapping(value = "/{id}/round/{round_id}", produces = {APPLICATION_JSON_VALUE})
-    public Round round(
+    @GetMapping(value = "/{battle_id}/round/{round_id}", produces = {APPLICATION_JSON_VALUE})
+    public Round findRoundById(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = true) String authorization,
-            @PathVariable Long id,
+            @PathVariable("battle_id") Long battleId,
             @PathVariable("round_id") Long roundId
     ) {
-        return service.listRound(id, roundId)
+        return service.listRound(battleId, roundId)
+                .map(this::configureHateoas)
                 .orElseThrow(ResourceNotFoundException::new);
     }
 
@@ -296,16 +306,44 @@ public class BattleController {
                     }
             )
     })
-    @PutMapping(value = "/{id}/round/{round_id}/answer", consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
+    @PutMapping(value = "/{battle_id}/round/{round_id}/answer", consumes = {APPLICATION_JSON_VALUE}, produces = {APPLICATION_JSON_VALUE})
     public Answer answer(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = true) String authorization,
-            @PathVariable("id") Long id,
+            @PathVariable("battle_id") Long battleId,
             @PathVariable("round_id") Long roundId,
             @Valid @RequestBody Answer answer
     ) {
-        return service.listRound(id, roundId)
+        return service.listRound(battleId, roundId)
                 .map(it -> service.answer(it.getBattle(), it, answer.getChoice()))
+                .map(this::configureHateoas)
                 .orElseThrow(ResourceNotFoundException::new);
+    }
+
+    private Battle configureHateoas(Battle battle) {
+        battle.add(
+                linkTo(methodOn(BattleController.class)
+                        .listRounds(null, battle.getId(), PageRequest.of(1, 10))
+                ).withRel("rounds")
+        );
+
+        return battle;
+    }
+
+    private Round configureHateoas(Round round) {
+        round.add(
+                linkTo(methodOn(BattleController.class)
+                        .findById(null, round.getBattle().getId())
+                ).withRel("battle")
+        );
+        return round;
+    }
+
+    private Answer configureHateoas(Answer answer) {
+        answer.add(
+                linkTo(methodOn(BattleController.class)
+                        .findRoundById(null, answer.getNextRound().getBattle().getId(), answer.getNextRound().getId())
+                ).withRel("nextRound"));
+        return answer;
     }
 
 }

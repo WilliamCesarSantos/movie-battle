@@ -1,6 +1,7 @@
 package br.com.santos.william.moviebattle.player;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.springframework.hateoas.RepresentationModel;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -15,7 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 @Entity
-public class Player implements Serializable, UserDetails {
+public class Player extends RepresentationModel<Player> implements Serializable, UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
