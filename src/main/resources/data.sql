@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS battle(
     description VARCHAR(80),
     created_at DATETIME,
     player_id INT NOT NULL,
-    status ENUM('INITIALIZED', 'STARTED', 'FINISHED') NOT NULL
+    status ENUM('CREATED', 'STARTED', 'FINISHED') NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS round(

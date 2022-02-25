@@ -1,6 +1,5 @@
 package br.com.santos.william.moviebattle.movie;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -14,7 +13,6 @@ public class MovieService {
 
     private final MovieRepository repository;
 
-    @Autowired
     public MovieService(MovieRepository repository) {
         this.repository = repository;
     }

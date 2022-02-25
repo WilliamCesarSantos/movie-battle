@@ -1,6 +1,5 @@
 package br.com.santos.william.moviebattle.player;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,7 +16,6 @@ public class PlayerService implements UserDetailsService {
     private final PlayerRepository repository;
     private final PasswordEncoder passwordEncoder;
 
-    @Autowired
     public PlayerService(
             PlayerRepository repository,
             PasswordEncoder passwordEncoder

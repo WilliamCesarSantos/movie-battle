@@ -50,7 +50,7 @@ public class BattleService {
         battle.setStatus(BattleStatus.CREATED);
         battle.setPlayer(session.getPlayer());
         var created = repository.save(battle);
-        log.debug("Publishing new event for battle: {}", battle);
+        log.debug("Publishing new event for battle: {}", battle.getId());
         publisher.publishEvent(new BattleStatusEvent(created, null, created.getStatus()));
         log.info("Created new battle: {}", battle.getId());
         return created;

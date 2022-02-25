@@ -47,7 +47,7 @@ public class OmdbService {
     }
 
     private OmdbMovie get(OmdbIdentifierMovie identifier) {
-        log.info("Search movie: {} ", identifier);
+        log.info("Search movie: {} ", identifier.getImdbID());
         return client.get(identifier.getImdbID());
     }
 
