@@ -3,6 +3,9 @@ package br.com.santos.william.moviebattle.battle;
 import br.com.santos.william.moviebattle.round.Round;
 import br.com.santos.william.moviebattle.player.Player;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import org.springframework.hateoas.RepresentationModel;
 
 import javax.persistence.*;
@@ -13,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Battle extends RepresentationModel<Battle> implements Serializable {
 
     @Id

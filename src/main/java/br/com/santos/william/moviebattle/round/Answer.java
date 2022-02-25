@@ -2,11 +2,14 @@ package br.com.santos.william.moviebattle.round;
 
 import br.com.santos.william.moviebattle.movie.Movie;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import org.springframework.hateoas.RepresentationModel;
 
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Answer extends RepresentationModel<Answer> implements Serializable {
 
     @NotNull

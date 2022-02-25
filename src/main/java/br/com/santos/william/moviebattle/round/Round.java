@@ -3,6 +3,8 @@ package br.com.santos.william.moviebattle.round;
 import br.com.santos.william.moviebattle.battle.Battle;
 import br.com.santos.william.moviebattle.movie.Movie;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import org.springframework.hateoas.RepresentationModel;
 
 import javax.persistence.*;
@@ -10,6 +12,7 @@ import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 @Entity
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Round extends RepresentationModel<Round> implements Serializable {
 
     @Id
