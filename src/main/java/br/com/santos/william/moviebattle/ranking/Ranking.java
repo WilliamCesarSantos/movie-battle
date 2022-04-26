@@ -1,6 +1,5 @@
 package br.com.santos.william.moviebattle.ranking;
 
-import br.com.santos.william.moviebattle.battle.Battle;
 import br.com.santos.william.moviebattle.player.Player;
 import org.springframework.hateoas.RepresentationModel;
 
@@ -13,7 +12,8 @@ import java.io.Serializable;
 public class Ranking extends RepresentationModel<Ranking> implements Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ranking_pk")
+    @SequenceGenerator(name = "ranking_pk", sequenceName = "pk_table")
     private Long id;
 
     @ManyToOne

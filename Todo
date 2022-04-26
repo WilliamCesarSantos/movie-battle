@@ -1,0 +1,5 @@
+Add consul (Configuration and discovery client)
+Add metrics
+Add actuator (More features)
+Build native image
+Use Netty non-blocking I/O (Webflux)

@@ -1,0 +1,42 @@
+#https://learn.hashicorp.com/tutorials/consul/docker-compose-datacenter
+version: '3.7'
+
+services:
+  consul-server:
+    image: hashicorp/consul:1.11.2
+    container_name: consul-server
+    restart: always
+    #    volumes:
+    #      - ./server1.json:/consul/config/server1.json:ro
+    #      - ./certs/:/consul/config/certs/:ro
+    networks:
+      - consul
+    ports:
+      - "8500:8500"
+      - "8600:8600/tcp"
+      - "8600:8600/udp"
+    command: "agent -bootstrap-expect=3"
+  consul-client:
+    image: hashicorp/consul:1.11.2
+    container_name: consul-client
+    restart: always
+    #    volumes:
+    #      - ./client.json:/consul/config/client.json:ro
+    #      - ./certs/:/consul/config/certs/:ro
+    networks:
+      - consul
+    command: "agent"
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/create_tables.sql
+
+networks:
+  consul:
+    driver: bridge

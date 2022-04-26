@@ -26,14 +26,14 @@ public class OmdbService {
         this.filters = filters;
     }
 
-    public Stream<Movie> listAll() {
+    public Stream<OmdbMovie> listAll() {
         log.warn("Executing omdb warmup. Wait this....");
         return Stream.of(filters)
                 .parallel()
                 .flatMap(this::search);
     }
 
-    private Stream<Movie> search(String filter) {
+    private Stream<OmdbMovie> search(String filter) {
         var pageLimit = this.discoveryPageLimit(filter);
         return IntStream.rangeClosed(1, pageLimit)
                 .parallel()
@@ -42,22 +42,12 @@ public class OmdbService {
                     return client.listIdentifier(filter, pageIndex);
                 })
                 .flatMap(page -> page.getIdentifiers().stream())
-                .map(this::get)
-                .map(this::convert);
+                .map(this::get);
     }
 
     private OmdbMovie get(OmdbIdentifierMovie identifier) {
         log.info("Search movie: {} ", identifier.getImdbID());
         return client.get(identifier.getImdbID());
-    }
-
-    private Movie convert(OmdbMovie omdb) {
-        var movie = new Movie();
-        movie.setRating(omdb.getImdbRating());
-        movie.setVotes(omdb.getImdbVotes());
-        movie.setName(omdb.getTitle());
-        movie.setGenre(omdb.getGenre());
-        return movie;
     }
 
     private Integer discoveryPageLimit(String filter) {

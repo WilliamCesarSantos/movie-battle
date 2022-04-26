@@ -38,7 +38,7 @@ class NonRepeatMovieChoiceStrategy extends RandomMovieChoiceStrategy implements 
         return super.choice(battle, newMovies);
     }
 
-    private Set<Long> usedMovies(Battle battle) {
+    private Set<String> usedMovies(Battle battle) {
         var rounds = battle.getRounds() != null ? battle.getRounds() : Collections.<Round>emptyList();
         log.debug("Collection movies on {} rounds", rounds.size());
         return rounds.stream()

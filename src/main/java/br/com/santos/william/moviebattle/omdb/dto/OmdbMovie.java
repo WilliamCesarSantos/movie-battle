@@ -15,6 +15,8 @@ public class OmdbMovie {
     private Float imdbRating;
     @JsonDeserialize(using = ImdbVotesDeserialize.class)
     private Integer imdbVotes;
+    @JsonProperty("Poster")
+    private String poster;
 
     public String getImdbID() {
         return imdbID;
@@ -54,5 +56,13 @@ public class OmdbMovie {
 
     public void setImdbVotes(Integer imdbVotes) {
         this.imdbVotes = imdbVotes;
+    }
+
+    public String getPoster() {
+        return poster;
+    }
+
+    public void setPoster(String poster) {
+        this.poster = poster;
     }
 }

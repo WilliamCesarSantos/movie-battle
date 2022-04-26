@@ -38,7 +38,7 @@ class NonRepeatPairMovieChoiceStrategy extends RandomMovieChoiceStrategy impleme
         return pair;
     }
 
-    private Set<Pair<Long, Long>> usedPairs(Battle battle) {
+    private Set<Pair<String, String>> usedPairs(Battle battle) {
         var rounds = battle.getRounds() != null ? battle.getRounds() : Collections.<Round>emptyList();
         log.debug("Collection pair of movies on {} rounds", rounds.size());
         return rounds.stream()
@@ -52,12 +52,12 @@ class NonRepeatPairMovieChoiceStrategy extends RandomMovieChoiceStrategy impleme
                 ));
     }
 
-    private Pair<Long, Long> createOrderedPair(Movie first, Movie second) {
+    private Pair<String, String> createOrderedPair(Movie first, Movie second) {
         log.debug("Creating new ordered pair for movies: {}, {}", first.getId(), second.getId());
         var firstId = first.getId();
         var secondId = second.getId();
-        Pair<Long, Long> pair;
-        if (firstId < secondId) {
+        Pair<String, String> pair;
+        if (firstId.compareTo(secondId) < 0) {
             pair = Pair.of(firstId, secondId);
         } else {
             pair = Pair.of(secondId, firstId);
