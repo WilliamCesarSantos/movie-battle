@@ -29,7 +29,7 @@ public class MovieServiceUnitTest {
 
     @BeforeEach
     public void setup() {
-        movie.setId(1l);
+        movie.setId("1");
         movie.setGenre("unit-test");
         movie.setName("unit-test");
         movie.setRating(10f);
@@ -50,9 +50,9 @@ public class MovieServiceUnitTest {
 
     @Test
     public void findByIdShouldCallsRepository() {
-        given(repository.findById(1l)).willReturn(Optional.of(movie));
+        given(repository.findById("1")).willReturn(Optional.of(movie));
 
-        var result = service.findById(1l);
+        var result = service.findById("1");
 
         assertNotNull(result);
         assertEquals(movie.getId(), result.get().getId());

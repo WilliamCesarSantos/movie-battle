@@ -19,8 +19,8 @@ import java.util.Collections;
 public class Player extends RepresentationModel<Player> implements Serializable, UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ranking_pk")
-    @SequenceGenerator(name = "ranking_pk", sequenceName = "pk_table")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "player_pk")
+    @SequenceGenerator(name = "player_pk", sequenceName = "pk_table")
     private Long id;
 
     @NotNull

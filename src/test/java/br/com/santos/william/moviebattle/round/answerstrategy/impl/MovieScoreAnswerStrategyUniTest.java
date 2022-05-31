@@ -19,12 +19,12 @@ public class MovieScoreAnswerStrategyUniTest {
     @Test
     public void answerReturnsHitWhenChosenScoreGreater() {
         var movieOne = new Movie();
-        movieOne.setId(1l);
+        movieOne.setId("1");
         movieOne.setRating(1.0f);
         movieOne.setVotes(1);
 
         var movieTwo = new Movie();
-        movieTwo.setId(2l);
+        movieTwo.setId("2");
         movieTwo.setRating(2.0f);
         movieTwo.setVotes(2);
 
@@ -40,12 +40,12 @@ public class MovieScoreAnswerStrategyUniTest {
     @Test
     public void answerReturnsMissWhenChosenScoreLess() {
         var movieOne = new Movie();
-        movieOne.setId(1l);
+        movieOne.setId("1");
         movieOne.setRating(1.0f);
         movieOne.setVotes(1);
 
         var movieTwo = new Movie();
-        movieTwo.setId(2l);
+        movieTwo.setId("2");
         movieTwo.setRating(2.0f);
         movieTwo.setVotes(2);
 

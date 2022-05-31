@@ -20,11 +20,11 @@ public class MovieRatingAnswerStrategyUnitTest {
     @Test
     public void answerReturnsHitWhenChosenRatingGreater() {
         var movieOne = new Movie();
-        movieOne.setId(1l);
+        movieOne.setId("1");
         movieOne.setRating(1.0f);
 
         var movieTwo = new Movie();
-        movieTwo.setId(2l);
+        movieTwo.setId("2");
         movieTwo.setRating(2.0f);
 
         var round = new Round();
@@ -39,11 +39,11 @@ public class MovieRatingAnswerStrategyUnitTest {
     @Test
     public void answerReturnsMissWhenChosenRatingLess() {
         var movieOne = new Movie();
-        movieOne.setId(1l);
+        movieOne.setId("1");
         movieOne.setRating(1.0f);
 
         var movieTwo = new Movie();
-        movieTwo.setId(2l);
+        movieTwo.setId("2");
         movieTwo.setRating(2.0f);
 
         var round = new Round();

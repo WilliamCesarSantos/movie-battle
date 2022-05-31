@@ -2,11 +2,14 @@ package br.com.santos.william.moviebattle.movie;
 
 import br.com.santos.william.moviebattle.omdb.OmdbService;
 import br.com.santos.william.moviebattle.omdb.dto.OmdbMovie;
+import io.micrometer.core.annotation.Timed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+
+import java.util.UUID;
 
 @Component
 public class MovieWarmUp {
@@ -21,6 +24,7 @@ public class MovieWarmUp {
     }
 
     @EventListener
+    @Timed(description = "Time spent to load movies")
     public void warmUp(ApplicationReadyEvent event) {
         omdbService.listAll()
                 .peek(it -> log.info("Inserting movie: {}.", it.getTitle()))

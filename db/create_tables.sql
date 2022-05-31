@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS player(
-    id IDENTITY PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     username VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
@@ -7,13 +7,13 @@ CREATE TABLE IF NOT EXISTS player(
 );
 
 CREATE TABLE IF NOT EXISTS ranking(
-    id IDENTITY PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     player_id INT NOT NULL,
     score FLOAT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS movie(
-    id IDENTITY PRIMARY KEY,
+    id VARCHAR PRIMARY KEY,
 	name VARCHAR(255) NOT NULL,
 	genre VARCHAR(80),
 	rating FLOAT NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS movie(
 );
 
 CREATE TABLE IF NOT EXISTS battle(
-    id IDENTITY PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     description VARCHAR(80),
     created_at DATETIME,
     player_id INT NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS battle(
 );
 
 CREATE TABLE IF NOT EXISTS round(
-    id IDENTITY PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     movie_one_id INT NOT NULL,
     movie_two_id INT NOT NULL,
     battle_id INT NOT NULL,

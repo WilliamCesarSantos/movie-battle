@@ -1,5 +1,6 @@
 package br.com.santos.william.moviebattle.player;
 
+import io.micrometer.core.annotation.Timed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -18,6 +19,7 @@ public class PlayerWarmUp {
     }
 
     @EventListener
+    @Timed(description = "Time spent to insert players")
     public void warmUp(ApplicationReadyEvent event) {
         log.info("Executing player warmup");
         try {

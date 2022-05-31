@@ -7,6 +7,7 @@ import br.com.santos.william.moviebattle.movie.MovieService;
 import br.com.santos.william.moviebattle.round.answerstrategy.AnswerStrategy;
 import br.com.santos.william.moviebattle.round.event.RoundEvent;
 import br.com.santos.william.moviebattle.round.moviechoicestrategy.MovieChoiceStrategy;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,6 +50,9 @@ public class RoundServiceUnitTest {
 
     @Mock
     private AnswerStrategy answerStrategy;
+
+    @Mock
+    private MeterRegistry meterRegistry;
 
     @InjectMocks
     private RoundService service;

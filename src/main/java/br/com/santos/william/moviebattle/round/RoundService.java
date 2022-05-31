@@ -7,6 +7,9 @@ import br.com.santos.william.moviebattle.movie.MovieService;
 import br.com.santos.william.moviebattle.round.answerstrategy.AnswerStrategy;
 import br.com.santos.william.moviebattle.round.event.RoundEvent;
 import br.com.santos.william.moviebattle.round.moviechoicestrategy.MovieChoiceStrategy;
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -24,6 +27,7 @@ public class RoundService {
     private final ApplicationEventPublisher publisher;
     private final MovieChoiceStrategy movieChoiceStrategy;
     private final AnswerStrategy answerStrategy;
+    private final MeterRegistry meterRegistry;
     private Logger log = LoggerFactory.getLogger(getClass());
 
     public RoundService(
@@ -31,13 +35,15 @@ public class RoundService {
             MovieService movieService,
             ApplicationEventPublisher publisher,
             MovieChoiceStrategy movieChoiceStrategy,
-            AnswerStrategy answerStrategy
+            AnswerStrategy answerStrategy,
+            MeterRegistry meterRegistry
     ) {
         this.repository = repository;
         this.movieService = movieService;
         this.publisher = publisher;
         this.movieChoiceStrategy = movieChoiceStrategy;
         this.answerStrategy = answerStrategy;
+        this.meterRegistry = meterRegistry;
     }
 
     public Optional<Round> findRoundOpened(Battle battle) {
@@ -52,6 +58,7 @@ public class RoundService {
         return repository.findByBattle(battle, pageable);
     }
 
+    @Timed(description = "Time spent to create new round")
     public Round createRound(Battle battle) {
         log.debug("Creating new round for battle: {}", battle.getId());
         var movies = movieService.list();
@@ -70,6 +77,7 @@ public class RoundService {
         return round;
     }
 
+    @Timed(description = "Time spent to answer")
     public Answer answer(Round round, Movie chosen) {
         if (round.getStatus() != RoundStatus.OPEN) {
             throw new BattleException("Round deve estar aberto para que seja respondido");
@@ -78,6 +86,10 @@ public class RoundService {
         log.debug("Answering round: {}", round.getId());
         var status = answerStrategy.answer(round, chosen);
         round.setStatus(status);
+        Gauge.builder("answer.result", () -> 1)
+                        .description("Round answered")
+                        .tag("result", status.name())
+                        .register(meterRegistry);
 
         movieService.findById(chosen.getId())
                 .ifPresent(round::setChoice);
