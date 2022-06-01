@@ -12,8 +12,7 @@ import java.io.Serializable;
 public class Ranking extends RepresentationModel<Ranking> implements Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ranking_pk")
-    @SequenceGenerator(name = "ranking_pk", sequenceName = "pk_table")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne

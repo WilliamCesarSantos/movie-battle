@@ -35,7 +35,7 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - ./db/create_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql
+      - ./db/V1.0.0__create.sql:/docker-entrypoint-initdb.d/V1.0.0__create.sql
 
 networks:
   consul:
