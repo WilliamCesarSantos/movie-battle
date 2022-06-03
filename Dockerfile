@@ -1,5 +1,6 @@
 #https://docs.docker.com/language/java/build-images/
-FROM openjdk:16-alpine3.13
+#https://mmarcosab.medium.com/criando-container-docker-com-aplica%C3%A7%C3%B5es-java-bfc8e6329c4e
+FROM openjdk:11
 
 WORKDIR /app
 
