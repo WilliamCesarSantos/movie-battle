@@ -43,7 +43,6 @@ services:
     restart: always
     volumes:
       - ./consul/client.json:/consul/config/client.json:ro
-      - ./consul/import_properties.sh:/consul/data/import_properties.sh
       - ./src/main/resources/application.properties:/consul/data/application.properties
     networks:
       - consul
