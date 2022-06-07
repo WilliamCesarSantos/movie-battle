@@ -10,7 +10,7 @@ services:
     volumes:
       - ./consul/server_1.json:/consul/config/server1.json:ro
     networks:
-      - consul
+      - movie-battle
     ports:
       - "8500:8500"
       - "8600:8600/tcp"
@@ -24,7 +24,7 @@ services:
     volumes:
       - ./consul/server_2.json:/consul/config/server2.json:ro
     networks:
-      - consul
+      - movie-battle
     command: "agent -bootstrap-expect=3"
 
   consul-server-3:
@@ -34,7 +34,7 @@ services:
     volumes:
       - ./consul/server_3.json:/consul/config/server3.json:ro
     networks:
-      - consul
+      - movie-battle
     command: "agent -bootstrap-expect=3"
 
   consul-client:
@@ -45,7 +45,7 @@ services:
       - ./consul/client.json:/consul/config/client.json:ro
       - ./src/main/resources/application.properties:/consul/data/application.properties
     networks:
-      - consul
+      - movie-battle
     command: "agent"
 
   postgres:
@@ -54,9 +54,11 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    networks:
+      - movie-battle
     ports:
       - '5432:5432'
 
 networks:
-  consul:
+  movie-battle:
     driver: bridge
