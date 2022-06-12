@@ -1,64 +1,14 @@
-#https://learn.hashicorp.com/tutorials/consul/docker-compose-datacenter
 version: '3.7'
 
 services:
 
-  consul-server-1:
-    image: hashicorp/consul:1.11.2
-    container_name: consul-server-1
-    restart: always
-    volumes:
-      - ./consul/server_1.json:/consul/config/server1.json:ro
-    networks:
-      - movie-battle
-    ports:
-      - "8500:8500"
-      - "8600:8600/tcp"
-      - "8600:8600/udp"
-    command: "agent -bootstrap-expect=3"
-
-  consul-server-2:
-    image: hashicorp/consul:1.11.2
-    container_name: consul-server-2
-    restart: always
-    volumes:
-      - ./consul/server_2.json:/consul/config/server2.json:ro
-    networks:
-      - movie-battle
-    command: "agent -bootstrap-expect=3"
-
-  consul-server-3:
-    image: hashicorp/consul:1.11.2
-    container_name: consul-server-3
-    restart: always
-    volumes:
-      - ./consul/server_3.json:/consul/config/server3.json:ro
-    networks:
-      - movie-battle
-    command: "agent -bootstrap-expect=3"
-
-  consul-client:
-    image: hashicorp/consul:1.11.2
-    container_name: consul-client
-    restart: always
-    volumes:
-      - ./consul/client.json:/consul/config/client.json:ro
-      - ./src/main/resources/application.properties:/consul/data/application.properties
-    networks:
-      - movie-battle
-    command: "agent"
-
   postgres:
     image: postgres
+    container_name: postgres
+    hostname: postgres
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    networks:
-      - movie-battle
     ports:
       - '5432:5432'
-
-networks:
-  movie-battle:
-    driver: bridge
