@@ -50,5 +50,11 @@ services:
       - "4566:4566"
       - "4571:4571"
     environment:
-      - services=sns,sqs
+      - SERVICES=sns,sqs
+      - AWS_DEFAULT_REGION=sa-east-1
+      - AWS_ACCESS_KEY_ID=aws_access_key
+      - AWS_SECRET_ACCESS_KEY=aws_secret_key
+      - DEFAULT_REGION=sa-east-1
+      - http_proxy=
+      - https_proxy=
     

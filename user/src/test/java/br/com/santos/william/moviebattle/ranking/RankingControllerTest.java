@@ -40,9 +40,6 @@ public class RankingControllerTest {
     @MockBean
     private RankingService service;
 
-    @MockBean
-    private Session session;
-
     private String baseUrl = "/api/ranking";
     private String token = "token";
 
@@ -64,7 +61,6 @@ public class RankingControllerTest {
         ranking.setId(10l);
         ranking.setPlayer(player);
 
-        given(session.getPlayer()).willReturn(player);
         given(service.list(player)).willReturn(Optional.of(ranking));
 
         this.mockMvc.perform(

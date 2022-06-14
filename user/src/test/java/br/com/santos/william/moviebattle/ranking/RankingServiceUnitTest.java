@@ -51,8 +51,7 @@ public class RankingServiceUnitTest {
 
     @Test
     public void calculateScoreShouldGenerateRankingWhenUserNoHasIt() {
-        var player = new PlayerDto();
-        player.setName("unit-test");
+        var player = new PlayerDto(10l , "unit-test", "unit-test");
 
         var finished = new BattleMovieFinished();
         finished.setPlayerDto(player);
@@ -67,8 +66,7 @@ public class RankingServiceUnitTest {
 
     @Test
     public void calculateScoreShouldUpdateExistsRanking() {
-        var player = new PlayerDto();
-        player.setName("unit-test");
+        var player = new PlayerDto(10l , "unit-test", "unit-test");
 
         var ranking = new Ranking();
         ranking.setScore(10f);
@@ -90,8 +88,7 @@ public class RankingServiceUnitTest {
 
     @Test
     public void calculateScoreShouldCallsStrategyWhenBattleStatusIsFinished() {
-        var player = new PlayerDto();
-        player.setName("unit-test");
+        var player = new PlayerDto(10l , "unit-test", "unit-test");
 
         var finished = new BattleMovieFinished();
         finished.setPlayerDto(player);
