@@ -1,16 +1,13 @@
 package br.com.santos.william.moviebattle.ranking.calculate.impl;
 
-import br.com.santos.william.moviebattle.battle.Battle;
 import br.com.santos.william.moviebattle.player.Player;
+import br.com.santos.william.moviebattle.player.dto.PlayerDto;
 import br.com.santos.william.moviebattle.ranking.Ranking;
-import br.com.santos.william.moviebattle.round.Round;
-import br.com.santos.william.moviebattle.round.RoundStatus;
+import br.com.santos.william.moviebattle.ranking.dto.BattleMovieFinished;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -22,50 +19,37 @@ public class PercentageRankingCalculateStrategyUniTest {
 
     @Test
     public void calculateScoreMustBeEquals198() {
-        var player = new Player();
-        player.setName("uni-test");
-
         var ranking = new Ranking();
         ranking.setPlayer(new Player());
         ranking.setId(1l);
 
-        var roundOne = new Round();
-        roundOne.setStatus(RoundStatus.HIT);
+        BattleMovieFinished finished = new BattleMovieFinished();
+        finished.setId(10l);
+        finished.setHits(2);
+        finished.setMiss(1);
+        finished.setTotalRounds(3);
+        finished.setPlayerDto(new PlayerDto(10l, "unit-test", "unit-test"));
 
-        var roundTwo = new Round();
-        roundTwo.setStatus(RoundStatus.HIT);
-
-        var roundThree = new Round();
-        roundThree.setStatus(RoundStatus.MISS);
-
-        var battle = new Battle();
-        battle.setPlayer(player);
-        battle.setRounds(List.of(
-                roundOne,
-                roundTwo,
-                roundThree
-        ));
-
-        strategy.calculate(battle, ranking);
+        strategy.calculate(finished, ranking);
 
         assertEquals(198f, ranking.getScore());
     }
 
     @Test
     public void calculateShouldNotUpdateScoreWhenBattleHasNoRound() {
-        var player = new Player();
-        player.setName("uni-test");
-
         var ranking = new Ranking();
         ranking.setPlayer(new Player());
         ranking.setId(1l);
         ranking.setScore(null);
 
-        var battle = new Battle();
-        battle.setRounds(List.of());
-        battle.setPlayer(player);
+        BattleMovieFinished finished = new BattleMovieFinished();
+        finished.setId(10l);
+        finished.setHits(0);
+        finished.setMiss(0);
+        finished.setTotalRounds(0);
+        finished.setPlayerDto(new PlayerDto(10l, "unit-test", "unit-test"));
 
-        strategy.calculate(battle, ranking);
+        strategy.calculate(finished, ranking);
 
         assertEquals(0f, ranking.getScore());
     }

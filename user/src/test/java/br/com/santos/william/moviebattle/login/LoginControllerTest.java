@@ -1,5 +1,6 @@
 package br.com.santos.william.moviebattle.login;
 
+import br.com.santos.william.moviebattle.commons.redis.RedisService;
 import br.com.santos.william.moviebattle.commons.token.JwtTokenProvider;
 import br.com.santos.william.moviebattle.player.Player;
 import br.com.santos.william.moviebattle.player.PlayerRepository;
@@ -44,6 +45,9 @@ public class LoginControllerTest {
 
     @MockBean
     private Session session;
+
+    @MockBean
+    private RedisService redisService;
 
     private String baseUrl = "/api/login";
 

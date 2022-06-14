@@ -1,9 +1,8 @@
 package br.com.santos.william.moviebattle.ranking.calculate.impl;
 
-import br.com.santos.william.moviebattle.battle.Battle;
 import br.com.santos.william.moviebattle.ranking.Ranking;
 import br.com.santos.william.moviebattle.ranking.calculate.RankingCalculateStrategy;
-import br.com.santos.william.moviebattle.round.RoundStatus;
+import br.com.santos.william.moviebattle.ranking.dto.BattleMovieFinished;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -20,7 +19,7 @@ class PercentageRankingCalculateStrategy implements RankingCalculateStrategy {
     }
 
     @Override
-    public void calculate(Battle battle, Ranking ranking) {
+    public void calculate(BattleMovieFinished battle, Ranking ranking) {
         if (ranking.getScore() == null) {
             log.trace("Ranking: {} without score, setting zero", ranking.getId());
             ranking.setScore(0f);
@@ -28,22 +27,17 @@ class PercentageRankingCalculateStrategy implements RankingCalculateStrategy {
         log.debug("Ranking old score is: {}", ranking.getScore());
         var increment = calculateScore(battle);
         ranking.setScore(ranking.getScore() + increment);
-        log.info("Updated score to: {} for player: {}", ranking.getScore(), battle.getPlayer().getName());
+        log.info("Updated score to: {} for player: {}", ranking.getScore(), battle.getPlayerDto().getName());
     }
 
-    private float calculateScore(Battle battle) {
+    private float calculateScore(BattleMovieFinished battle) {
         var score = 0f;
-        var rounds = battle.getRounds();
-        if (!rounds.isEmpty()) {
-            var hits = rounds.stream()
-                    .filter(it -> it.getStatus() == RoundStatus.HIT)
-                    .count();
-            log.trace("{} hists in battle: {}", hits, battle.getId());
+        log.trace("{} hists in battle: {}", battle.getHits(), battle.getId());
 
-            float percentage = hits * 100 / rounds.size();
+        if (battle.getTotalRounds() > 0) {
+            float percentage = battle.getHits() * 100 / battle.getTotalRounds();
             log.debug("Percentage of wins rounds is: {} in battle: {}", percentage, battle.getId());
-
-            score = rounds.size() * percentage;
+            score = battle.getTotalRounds() * percentage;
         }
         return score;
     }

@@ -1,6 +1,7 @@
 package br.com.santos.william.moviebattle.player;
 
 import br.com.santos.william.moviebattle.commons.token.JwtTokenProvider;
+import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,9 @@ public class PlayerControllerTest {
 
     @MockBean
     private PlayerService service;
+
+    @MockBean
+    private AmazonSQSClient sqsClient;
 
     private String baseUrl = "/api/player";
     private String token = "token";

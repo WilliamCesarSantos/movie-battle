@@ -1,5 +1,8 @@
 package br.com.santos.william.moviebattle.player;
 
+import br.com.santos.william.moviebattle.commons.redis.RedisService;
+import br.com.santos.william.moviebattle.login.LoginEvent;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -8,17 +11,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(SpringExtension.class)
-public class UserServiceUnitTest {
+public class PlayerServiceUnitTest {
 
     @Mock
     private PlayerRepository repository;
@@ -26,8 +32,16 @@ public class UserServiceUnitTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private RedisService redisService;
+
     @InjectMocks
     private PlayerService service;
+
+    @BeforeEach
+    public void setup() {
+        ReflectionTestUtils.setField(service, "expiresSession", 3000l);
+    }
 
     @Test
     public void listShouldForwardParameter() {
@@ -80,5 +94,22 @@ public class UserServiceUnitTest {
         given(repository.findByUsername(any())).willReturn(Optional.empty());
 
         assertThrows(UsernameNotFoundException.class, () -> service.loadUserByUsername("unit-test"));
+    }
+
+    @Test
+    public void serviceShouldPublishToRedisLoggedUser() {
+        var player = new Player();
+        player.setId(10l);
+        player.setUsername("unit-test");
+        player.setName("unit-test");
+        var event = new LoginEvent(player, "unit-test");
+
+        service.publishToRedis(event);
+
+        verify(redisService, times(1)).put(
+                eq(player.getUsername()),
+                any(),
+                any()
+        );
     }
 }

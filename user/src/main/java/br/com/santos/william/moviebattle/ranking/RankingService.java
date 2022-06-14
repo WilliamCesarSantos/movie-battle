@@ -1,13 +1,13 @@
 package br.com.santos.william.moviebattle.ranking;
 
-import br.com.santos.william.moviebattle.battle.Battle;
-import br.com.santos.william.moviebattle.battle.BattleStatus;
-import br.com.santos.william.moviebattle.battle.event.BattleStatusEvent;
+import br.com.santos.william.moviebattle.commons.exception.ResourceNotFoundException;
 import br.com.santos.william.moviebattle.player.Player;
+import br.com.santos.william.moviebattle.player.PlayerRepository;
 import br.com.santos.william.moviebattle.ranking.calculate.RankingCalculateStrategy;
+import br.com.santos.william.moviebattle.ranking.dto.BattleMovieFinished;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.event.EventListener;
+import org.springframework.cloud.aws.messaging.listener.annotation.SqsListener;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -17,31 +17,34 @@ public class RankingService {
 
     private final RankingRepository repository;
     private final RankingCalculateStrategy strategy;
+
+    private final PlayerRepository playerRepository;
     private Logger log = LoggerFactory.getLogger(getClass());
 
     public RankingService(
             RankingRepository repository,
-            RankingCalculateStrategy strategy
+            RankingCalculateStrategy strategy,
+            PlayerRepository playerRepository
     ) {
         this.repository = repository;
         this.strategy = strategy;
+        this.playerRepository = playerRepository;
     }
 
     public Optional<Ranking> list(Player player) {
         return repository.findByPlayer(player);
     }
 
-    @EventListener
-    public void calculateScore(BattleStatusEvent event) {
-        if (event.getNewStatus() == BattleStatus.FINISHED) {
-            var battle = (Battle) event.getSource();
-            log.info("Battle: {} was finished. Calculating new score ranking...", battle.getId());
-            var ranking = repository.findByPlayer(battle.getPlayer())
-                    .orElse(buildRanking(battle.getPlayer()));
-            strategy.calculate(battle, ranking);
-            repository.save(ranking);
-            log.info("Ranking: {} updated", battle.getId());
-        }
+    @SqsListener("${battle-movie.finished}")
+    public void calculateScore(BattleMovieFinished battle) {
+        log.info("Battle: {} was finished. Calculating new score ranking...", battle.getId());
+        var player = playerRepository.findById(battle.getPlayerDto().getId())
+                .orElseThrow(ResourceNotFoundException::new);
+        var ranking = repository.findByPlayer(player)
+                .orElse(buildRanking(player));
+        strategy.calculate(battle, ranking);
+        repository.save(ranking);
+        log.info("Ranking: {} updated", battle.getId());
     }
 
     private Ranking buildRanking(Player player) {

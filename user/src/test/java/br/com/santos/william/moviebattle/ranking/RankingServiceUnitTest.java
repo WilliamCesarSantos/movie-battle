@@ -1,20 +1,17 @@
 package br.com.santos.william.moviebattle.ranking;
 
-import br.com.santos.william.moviebattle.battle.Battle;
-import br.com.santos.william.moviebattle.battle.BattleStatus;
-import br.com.santos.william.moviebattle.battle.event.BattleStatusEvent;
 import br.com.santos.william.moviebattle.player.Player;
+import br.com.santos.william.moviebattle.player.PlayerRepository;
+import br.com.santos.william.moviebattle.player.dto.PlayerDto;
 import br.com.santos.william.moviebattle.ranking.calculate.RankingCalculateStrategy;
-import br.com.santos.william.moviebattle.round.Round;
-import br.com.santos.william.moviebattle.round.RoundStatus;
+import br.com.santos.william.moviebattle.ranking.dto.BattleMovieFinished;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -31,8 +28,17 @@ public class RankingServiceUnitTest {
     @Mock
     private RankingCalculateStrategy strategy;
 
+    @Mock
+    private PlayerRepository playerRepository;
+
     @InjectMocks
     private RankingService service;
+
+    @BeforeEach
+    public void setup() {
+        var player = mock(Player.class);
+        doReturn(Optional.of(player)).when(playerRepository).findById(any());
+    }
 
     @Test
     public void listShouldForwardParameters() {
@@ -44,42 +50,24 @@ public class RankingServiceUnitTest {
     }
 
     @Test
-    public void calculateScoreShouldDiscardEventWhenStatusIsCreated() {
-        BattleStatusEvent event = new BattleStatusEvent(new Battle(), null, BattleStatus.CREATED);
-        service.calculateScore(event);
-
-        verifyNoInteractions(repository);
-    }
-
-    @Test
-    public void calculateScoreShouldDiscardEventWhenStatusIsStarted() {
-        BattleStatusEvent event = new BattleStatusEvent(new Battle(), null, BattleStatus.STARTED);
-        service.calculateScore(event);
-
-        verifyNoInteractions(repository);
-    }
-
-    @Test
     public void calculateScoreShouldGenerateRankingWhenUserNoHasIt() {
-        var player = new Player();
+        var player = new PlayerDto();
         player.setName("unit-test");
 
-        var battle = new Battle();
-        battle.setPlayer(player);
-        battle.setRounds(Collections.emptyList());
-
-        BattleStatusEvent event = new BattleStatusEvent(battle, null, BattleStatus.FINISHED);
+        var finished = new BattleMovieFinished();
+        finished.setPlayerDto(player);
+        finished.setTotalRounds(0);
 
         given(repository.findByPlayer(any())).willReturn(Optional.empty());
 
-        service.calculateScore(event);
+        service.calculateScore(finished);
 
         verify(repository).save(any());
     }
 
     @Test
     public void calculateScoreShouldUpdateExistsRanking() {
-        var player = new Player();
+        var player = new PlayerDto();
         player.setName("unit-test");
 
         var ranking = new Ranking();
@@ -87,49 +75,32 @@ public class RankingServiceUnitTest {
         ranking.setPlayer(new Player());
         ranking.setId(1l);
 
-        var round = new Round();
-        round.setStatus(RoundStatus.HIT);
-
-        var battle = new Battle();
-        battle.setRounds(List.of(round));
-        battle.setPlayer(player);
+        var finished = new BattleMovieFinished();
+        finished.setPlayerDto(player);
+        finished.setTotalRounds(1);
+        finished.setMiss(0);
+        finished.setHits(1);
 
         given(repository.findByPlayer(any())).willReturn(Optional.of(ranking));
 
-        BattleStatusEvent event = new BattleStatusEvent(battle, BattleStatus.STARTED, BattleStatus.FINISHED);
-        service.calculateScore(event);
+        service.calculateScore(finished);
 
         verify(repository).save(ranking);
     }
 
     @Test
     public void calculateScoreShouldCallsStrategyWhenBattleStatusIsFinished() {
-        var player = new Player();
+        var player = new PlayerDto();
         player.setName("unit-test");
 
-        var battle = new Battle();
-        battle.setPlayer(player);
+        var finished = new BattleMovieFinished();
+        finished.setPlayerDto(player);
 
         given(repository.findByPlayer(any())).willReturn(Optional.empty());
 
-        BattleStatusEvent event = new BattleStatusEvent(battle, BattleStatus.STARTED, BattleStatus.FINISHED);
+        service.calculateScore(finished);
 
-        service.calculateScore(event);
-
-        verify(strategy).calculate(eq(battle), any());
-    }
-
-    @Test
-    public void calculateScoreShouldNotCallStrategyWhenBattleStatusIsStarted() {
-        var battle = new Battle();
-
-        given(repository.findByPlayer(any())).willReturn(Optional.empty());
-
-        BattleStatusEvent event = new BattleStatusEvent(battle, BattleStatus.STARTED, BattleStatus.STARTED);
-
-        service.calculateScore(event);
-
-        verifyNoMoreInteractions(strategy);
+        verify(strategy).calculate(eq(finished), any());
     }
 
 }
