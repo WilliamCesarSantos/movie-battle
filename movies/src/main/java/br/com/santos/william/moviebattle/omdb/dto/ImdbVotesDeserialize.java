@@ -14,4 +14,5 @@ public class ImdbVotesDeserialize extends JsonDeserializer<Integer> {
         var value = jsonParser.getText();
         return Integer.valueOf(value.replaceAll(",", ""));
     }
+
 }

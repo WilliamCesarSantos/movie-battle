@@ -1,36 +1,36 @@
 package br.com.santos.william.moviebattle.movie;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import javax.validation.Valid;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class MovieService {
 
-    private final MovieRepository repository;
+    private AmazonSQS amazonSQS;
+    private String queueUrl;
+    private ObjectMapper mapper;
 
-    public MovieService(MovieRepository repository) {
-        this.repository = repository;
+    public MovieService(
+            AmazonSQS amazonSQS,
+            @Value("${battle-movie.movie.catalog-queue}") String queueName,
+            ObjectMapper mapper
+    ) {
+        this.amazonSQS = amazonSQS;
+        this.queueUrl = amazonSQS.getQueueUrl(queueName).getQueueUrl();
+        this.mapper = mapper;
     }
 
-    public Page<Movie> list(Pageable pageable) {
-        return repository.findAll(pageable);
+    public void publish(MovieDto movie) {
+        try {
+            var request = new SendMessageRequest()
+                    .withQueueUrl(queueUrl)
+                    .withMessageBody(mapper.writeValueAsString(movie));
+            amazonSQS.sendMessage(request);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
-
-    public Optional<Movie> findById(String id) {
-        return repository.findById(id);
-    }
-
-    public List<Movie> list() {
-        return repository.findAll();
-    }
-
-    public Movie insert(@Valid Movie movie) {
-        return repository.save(movie);
-    }
-
 }

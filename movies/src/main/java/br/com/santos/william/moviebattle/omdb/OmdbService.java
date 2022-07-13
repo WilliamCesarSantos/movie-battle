@@ -1,6 +1,5 @@
 package br.com.santos.william.moviebattle.omdb;
 
-import br.com.santos.william.moviebattle.movie.Movie;
 import br.com.santos.william.moviebattle.omdb.dto.OmdbIdentifierMovie;
 import br.com.santos.william.moviebattle.omdb.dto.OmdbMovie;
 import org.slf4j.Logger;
