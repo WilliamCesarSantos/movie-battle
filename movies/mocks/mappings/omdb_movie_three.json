@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/movie/3"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "imdbID": "3",
+      "Title": "O alto da compadecida",
+      "Genre": "Comédia",
+      "imdbRating": 9.2,
+      "imdbVotes": 100
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

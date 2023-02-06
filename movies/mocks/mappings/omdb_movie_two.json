@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/movie/2"
+  },
+  "response": {
+    "status": 400,
+    "jsonBody": {
+      "message": "Bad request"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

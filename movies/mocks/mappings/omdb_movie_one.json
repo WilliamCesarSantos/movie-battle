@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/movie/1"
+  },
+  "response": {
+    "status": 500,
+    "jsonBody": {
+      "message": "Internal server error"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

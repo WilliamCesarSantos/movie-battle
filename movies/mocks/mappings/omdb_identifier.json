@@ -1,0 +1,26 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/identifier"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "totalResults": 3,
+      "Search": [
+        {
+          "imdbID": "1"
+        },
+        {
+          "imdbID": "2"
+        },
+        {
+          "imdbID": "3"
+        }
+      ]
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

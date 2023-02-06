@@ -19,7 +19,7 @@ public class MovieService {
             ObjectMapper mapper
     ) {
         this.amazonSQS = amazonSQS;
-        this.queueUrl = amazonSQS.getQueueUrl(queueName).getQueueUrl();
+        //this.queueUrl = amazonSQS.getQueueUrl(queueName).getQueueUrl();
         this.mapper = mapper;
     }
 

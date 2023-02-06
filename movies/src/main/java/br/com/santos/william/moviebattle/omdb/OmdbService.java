@@ -38,7 +38,7 @@ public class OmdbService {
                 .parallel()
                 .mapToObj(pageIndex -> {
                     log.debug("Searching page: {} with filter: {}", pageIndex, filter);
-                    return client.listIdentifier(filter, pageIndex);
+                    return client.listIdentifier();
                 })
                 .flatMap(page -> page.getIdentifiers().stream())
                 .map(this::get);
@@ -52,7 +52,7 @@ public class OmdbService {
     private Integer discoveryPageLimit(String filter) {
         var limit = 1;
         var pageSize = 10;
-        var firstPage = client.listIdentifier(filter, 1);
+        var firstPage = client.listIdentifier();
         var totalResults = firstPage.getTotalResults();
         if (totalResults != null && totalResults > pageSize) {
             limit = Math.abs(firstPage.getTotalResults() / 10);
